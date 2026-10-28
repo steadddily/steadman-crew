@@ -1,0 +1,512 @@
+<title>The Crew</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap">
+<style>
+
+/* Layout: the Mission Control space look, committed dark. The bridge is the page: a wide deck with the
+   viewscreen across the back wall, eight console berths in two rows and the command dais in the middle.
+   The crew are small and mostly at their posts. The crew's numbers and the relay feed follow below. */
+:root{
+  --void:#0c0510; --glass:rgba(34,16,38,.72); --line:rgba(253,245,252,.13); --line-2:rgba(253,245,252,.24);
+  --star:#fdf5fc; --mute:rgba(253,245,252,.68); --faint:rgba(253,245,252,.44);
+  --orchid:#d9a6dc; --cognac:#d5a56a; --live:#a9cb8e; --watch:#f1c95c;
+  --desk:#2a142f; --desk-top:#45224c; --screen:#120914;
+  --serif:"GascogneSerial-Light",Georgia,serif; --sans:"Geist",-apple-system,"Segoe UI",sans-serif; --mono:"Geist Mono",ui-monospace,Menlo,monospace;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--void);color:var(--star);font:14px/1.5 var(--sans);overflow-x:hidden}
+body::before{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
+  background:radial-gradient(60vmax 40vmax at 50% 0%,rgba(108,29,114,.45),transparent 70%),radial-gradient(50vmax 30vmax at 50% 100%,rgba(213,165,106,.10),transparent 70%)}
+a{color:var(--orchid)}
+:focus-visible{outline:2px solid var(--cognac);outline-offset:2px}
+main{position:relative;z-index:1;max-width:1480px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 56px;display:grid;gap:22px}
+.top{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 16px}
+.hub{color:var(--mute);text-decoration:none;font:500 11.5px var(--mono);letter-spacing:.14em;text-transform:uppercase}
+.hub:hover{color:var(--cognac)}
+.top h1{margin:0;font:400 clamp(34px,6vw,54px)/1 var(--serif);letter-spacing:-.01em;flex-basis:100%}
+.lede{margin:0;color:var(--mute);max-width:70ch}
+.asof{color:var(--mute);font:500 12.5px var(--mono)}
+
+.scene-wrap{overflow-x:auto;border-radius:22px;border:1px solid var(--line);background:#0e0612}
+.scene{position:relative;min-width:820px;aspect-ratio:1600/840}
+.scene canvas{position:absolute;left:23.75%;top:4.048%;width:52.5%;height:31.667%;border-radius:1.4%/3.6%;display:block}
+.scene svg.stage{position:absolute;inset:0;width:100%;height:100%}
+.sm{--surface:#fdf5fc;--ink:#221820;--cheek:#e79bb4;--muted:#cdb9d1;--font-sans:var(--sans)}
+.lbl{font:500 11px var(--mono);letter-spacing:.18em;fill:var(--cognac)}
+.lbl.dim{fill:var(--faint)}
+.tag{font:500 11px var(--sans);fill:var(--mute);paint-order:stroke;stroke:#0e0612;stroke-width:3px;stroke-linejoin:round}
+.ticker{font:500 19px var(--mono);letter-spacing:.03em;fill:var(--star)}
+.ticker2{font:500 14px var(--mono);fill:var(--mute)}
+.ticker-k{font:500 12px var(--mono);letter-spacing:.2em;fill:var(--cognac)}
+.bar{transform-box:fill-box;transform-origin:0 50%;animation:type var(--type,1.2s) steps(4) infinite}
+@keyframes type{0%{transform:scaleX(.25)}50%{transform:scaleX(1)}100%{transform:scaleX(.55)}}
+.idle .bar{animation:none;transform:scaleX(.4);opacity:.35}
+.ring{transform-box:fill-box;transform-origin:50% 50%;animation:ring 3.2s ease-out infinite}
+@keyframes ring{0%{transform:scale(.4);opacity:.8}100%{transform:scale(2.4);opacity:0}}
+.blink{animation:blink var(--b,3s) ease-in-out infinite}
+@keyframes blink{0%,100%{opacity:.2}50%{opacity:.85}}
+/* Wash's dinosaurs: they hop, face off and bump while he has nothing to fly. */
+.dino{transform-box:fill-box;transform-origin:50% 100%}
+.dino.a{animation:dinoA 3.4s ease-in-out infinite}.dino.b{animation:dinoB 3.4s ease-in-out infinite}
+@keyframes dinoA{0%,100%{transform:translate(0,0) rotate(0)}20%{transform:translate(-6px,-10px) rotate(-8deg)}40%{transform:translate(-14px,0) rotate(0)}55%{transform:translate(-16px,-4px) rotate(-14deg)}70%{transform:translate(-8px,0)}}
+@keyframes dinoB{0%,100%{transform:translate(0,0)}30%{transform:translate(8px,-8px) rotate(6deg)}50%{transform:translate(14px,0)}60%{transform:translate(16px,-3px) rotate(10deg)}80%{transform:translate(6px,0)}}
+@media (prefers-reduced-motion:reduce){.bar,.ring,.blink,.dino{animation:none}}
+/* Opening: the ship flies in through space, the camera closes on its door, the door opens onto the deck. */
+#intro{position:fixed;inset:0;z-index:50;background:#05020a;transition:opacity .45s ease}
+#intro.clear{background:transparent}#intro.gone{opacity:0;pointer-events:none}
+#intro canvas,#intro svg{position:absolute;inset:0;width:100%;height:100%}
+/* Red alert: the deck goes dark red and pulses while the crew run to their stations. */
+.scene::after{content:"";position:absolute;inset:0;pointer-events:none;border-radius:inherit;background:radial-gradient(80% 70% at 50% 60%,rgba(255,40,50,.0),rgba(120,0,10,.0));transition:background .6s}
+.scene.alert::after{background:radial-gradient(80% 70% at 50% 60%,rgba(255,40,50,.10),rgba(90,0,10,.55));animation:alertPulse 1.1s ease-in-out infinite}
+@keyframes alertPulse{0%,100%{opacity:.65}50%{opacity:1}}
+.scene.alert svg.stage .blink{fill:#ff4d4d;animation-duration:.55s}
+.scene.alert .ticker,.scene.alert .ticker-k{fill:#ff8a8a}
+#skip{position:absolute;right:calc(16px + env(safe-area-inset-right,0px));bottom:calc(16px + env(safe-area-inset-bottom,0px));
+  border:1px solid var(--line-2);background:rgba(12,5,16,.6);color:var(--star);border-radius:999px;padding:5px 14px;font:500 12px var(--mono);letter-spacing:.12em;cursor:pointer}
+#skip:hover{border-color:var(--cognac);color:var(--cognac)}
+.replay{border:0;background:none;color:var(--mute);font:500 12px var(--mono);text-decoration:underline;cursor:pointer;padding:0}
+.replay:hover{color:var(--cognac)}
+
+h2{margin:0 0 10px;font:400 22px/1.2 var(--serif)}
+.roster{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
+.mem{padding:14px 16px;border:1px solid var(--line);border-radius:14px;background:var(--glass);display:grid;gap:4px;align-content:start;min-width:0}
+.mem.open{border-style:dashed;opacity:.75}
+.mem .k{font:500 10.5px var(--mono);letter-spacing:.18em;text-transform:uppercase;color:var(--cognac)}
+.mem h3{margin:0;font:400 22px/1.15 var(--serif)}
+.mem p{margin:0;color:var(--mute);font-size:13px}
+.nums{display:flex;flex-wrap:wrap;gap:6px 14px;font:500 12px var(--mono);color:var(--mute);margin-top:4px}
+.nums b{color:var(--star);font-weight:500}
+.chip{font:500 11px var(--mono);letter-spacing:.06em;padding:1px 8px;border-radius:999px;border:1px solid var(--line-2);color:var(--mute);justify-self:start}
+.chip.live{color:var(--live);border-color:rgba(169,203,142,.45)}.chip.cand{color:var(--live);border-color:var(--live);font-weight:700}.nums .bar{flex-basis:100%;color:var(--mute)}.chip.test{color:var(--watch);border-color:rgba(241,201,92,.45)}
+.feed{list-style:none;margin:0;padding:0;display:grid;border:1px solid var(--line);border-radius:14px;background:var(--glass);overflow:hidden}
+.feed li{display:grid;grid-template-columns:110px 14px minmax(0,1fr) auto;gap:10px;align-items:baseline;padding:9px 14px;border-top:1px solid var(--line);font-size:13.5px}
+.feed li:first-child{border-top:0}
+.feed time{font:500 12px var(--mono);color:var(--mute);font-variant-numeric:tabular-nums}
+.feed .dot{width:9px;height:9px;border-radius:50%;align-self:center}
+.feed .who{color:var(--star)}.feed .what{color:var(--mute)}
+.feed .to{font:500 12px var(--mono);color:var(--mute);white-space:nowrap}
+.empty{padding:14px;color:var(--mute)}
+footer{color:var(--faint);font-size:12.5px;border-top:1px solid var(--line);padding-top:12px}
+@media (max-width:560px){.feed li{grid-template-columns:14px minmax(0,1fr)}.feed time,.feed .to{grid-column:2}}
+.feed li{grid-template-columns:14px minmax(0,1fr) auto}
+</style>
+
+<div id="intro" hidden><canvas id="introCv" aria-hidden="true"></canvas>
+<svg id="introSvg" viewBox="-400 -300 800 600" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><g id="shipF">
+<defs>
+ <linearGradient id="f-far" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5a1862"/><stop offset=".5" stop-color="#311140"/><stop offset="1" stop-color="#1c0621"/></linearGradient>
+ <linearGradient id="f-mid" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8a3a92"/><stop offset=".5" stop-color="#4a1452"/><stop offset="1" stop-color="#1c0621"/></linearGradient>
+ <linearGradient id="f-fore" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#a456ab"/><stop offset=".45" stop-color="#6c1d72"/><stop offset="1" stop-color="#2a0a30"/></linearGradient>
+ <linearGradient id="f-head" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#b86cbe"/><stop offset=".7" stop-color="#8a3a92"/><stop offset="1" stop-color="#8a3a92" stop-opacity="0"/></linearGradient>
+ <linearGradient id="f-pylon" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7a2a82"/><stop offset="1" stop-color="#3a1040"/></linearGradient>
+ <linearGradient id="f-glass" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff3d0"/><stop offset=".55" stop-color="#ffd48a"/><stop offset="1" stop-color="#d98f4a"/></linearGradient>
+ <radialGradient id="f-halo"><stop offset="0" stop-color="#ffe7b0" stop-opacity=".9"/><stop offset=".3" stop-color="#ffd48a" stop-opacity=".55"/><stop offset=".65" stop-color="#f0aa50" stop-opacity=".2"/><stop offset="1" stop-color="#f0aa50" stop-opacity="0"/></radialGradient>
+ <radialGradient id="f-softglow"><stop offset="0" stop-color="#ffe7b0" stop-opacity=".9"/><stop offset=".5" stop-color="#f0aa50" stop-opacity=".35"/><stop offset="1" stop-color="#f0aa50" stop-opacity="0"/></radialGradient>
+ <radialGradient id="f-orchid"><stop offset="0" stop-color="#f6dcf8"/><stop offset=".45" stop-color="#d9a6dc" stop-opacity=".6"/><stop offset="1" stop-color="#d9a6dc" stop-opacity="0"/></radialGradient>
+ <radialGradient id="f-collector"><stop offset="0" stop-color="#fff8e6"/><stop offset=".5" stop-color="#ffe7b0"/><stop offset="1" stop-color="#f0aa50"/></radialGradient>
+</defs>
+
+<!-- the firefly engines behind the hull: a warm halo around the whole ship -->
+<circle cx="0" cy="8" r="150" fill="url(#f-halo)"/>
+
+<!-- ENGINEERING BLOCK: the widest, farthest section (roof terrace at the top, deep belly below) -->
+<path d="M-60 -30 C-60 -62 -32 -72 0 -72 C32 -72 60 -62 60 -30 L60 24 C60 56 32 76 0 76 C-32 76 -60 56 -60 24 Z" fill="url(#f-far)"/>
+<path d="M-56 -36 C-50 -60 -28 -69 0 -69 C28 -69 50 -60 56 -36" fill="none" stroke="#d9a6dc" stroke-opacity=".35" stroke-width="1.2"/>
+
+<!-- NACELLES on swept pylons, left and right; pylon roots sit inside the hull and are covered by the midship block -->
+<path d="M-36 -46 L-106 -57 L-106 -45 L-36 -28 Z" fill="url(#f-pylon)"/>
+<path d="M36 -46 L106 -57 L106 -45 L36 -28 Z" fill="url(#f-pylon)"/>
+<g>
+ <circle cx="-122" cy="-51" r="36" fill="url(#f-orchid)" opacity=".8"/>
+ <circle cx="-122" cy="-51" r="23" fill="#3a1040" stroke="#5e1a66" stroke-width="2"/>
+ <circle cx="-122" cy="-51" r="17" fill="#d5a56a"/>
+ <circle cx="-122" cy="-51" r="13" fill="url(#f-collector)"/>
+ <circle cx="-122" cy="-51" r="5.5" fill="#fff8e6"/>
+ <circle cx="-147" cy="-51" r="2.4" fill="#a9cb8e"/>
+</g>
+<g>
+ <circle cx="122" cy="-51" r="36" fill="url(#f-orchid)" opacity=".8"/>
+ <circle cx="122" cy="-51" r="23" fill="#3a1040" stroke="#5e1a66" stroke-width="2"/>
+ <circle cx="122" cy="-51" r="17" fill="#d5a56a"/>
+ <circle cx="122" cy="-51" r="13" fill="url(#f-collector)"/>
+ <circle cx="122" cy="-51" r="5.5" fill="#fff8e6"/>
+ <circle cx="147" cy="-51" r="2.4" fill="#ff8b8b"/>
+</g>
+
+<!-- MIDSHIP BLOCK: the first terrace, nearer and lighter -->
+<path d="M-47 -20 C-47 -48 -25 -56 0 -56 C25 -56 47 -48 47 -20 L47 18 C47 44 24 60 0 60 C-24 60 -47 44 -47 18 Z" fill="url(#f-mid)"/>
+<path d="M-44 -24 C-40 -46 -22 -53 0 -53 C22 -53 40 -46 44 -24" fill="none" stroke="#d9a6dc" stroke-opacity=".4" stroke-width="1.2"/>
+<!-- terrace lounge windows, seen on the flanks -->
+<g fill="#ffe7b0" opacity=".75"><rect x="-44" y="-30" width="3" height="2.6" rx=".6"/><rect x="41" y="-30" width="3" height="2.6" rx=".6"/></g>
+<!-- the gold sheer line where it runs along the midship flanks -->
+<g stroke="#d5a56a" stroke-width="2" stroke-linecap="round"><path d="M-46 8 L-40 6"/><path d="M46 8 L40 6"/></g>
+
+<!-- FOREBODY: the bow, nearest and lit, converging to the prow point -->
+<path d="M-33 -12 C-33 -34 -17 -40 0 -40 C17 -40 33 -34 33 -12 L33 8 C33 30 16 42 0 42 C-16 42 -33 30 -33 8 Z" fill="url(#f-fore)"/>
+<!-- the keel edge runs down from the prow: the dagger seen end-on -->
+<path d="M0 -6 L-4.5 4 L-3 38 L0 42 Z" fill="#a456ab" opacity=".55"/>
+<path d="M0 -6 L4.5 4 L3 38 L0 42 Z" fill="#1c0621" opacity=".6"/>
+<path d="M0 6 L0 39" stroke="#d5a56a" stroke-opacity=".7" stroke-width="1.2" stroke-linecap="round"/>
+<!-- the gold sheer line sweeps in to the prow from both flanks -->
+<path d="M-31 5 C-16 1 16 1 31 5" fill="none" stroke="#d5a56a" stroke-width="2.4" stroke-linecap="round"/>
+<!-- the observation lounge: one quiet pane on the bow -->
+<path d="M-9 -12 H9 L8 -8 H-8 Z" fill="url(#f-glass)" opacity=".8" stroke="#d5a56a" stroke-width=".8"/>
+<!-- one crew-deck window each side at the deck line -->
+<g fill="#ffe7b0" opacity=".8"><rect x="-30" y="-19" width="3" height="2.4" rx=".6"/><rect x="27" y="-19" width="3" height="2.4" rx=".6"/></g>
+
+<!-- BRIDGE: the command head rises from the forebody, the canopy glows toward us -->
+<path d="M-21 -22 L-21 -36 C-21 -58 -11 -66 0 -66 C11 -66 21 -58 21 -36 L21 -22 Z" fill="url(#f-head)"/>
+<path d="M-19 -38 C-17 -56 -9 -63 0 -63 C9 -63 17 -56 19 -38" fill="none" stroke="#d5a56a" stroke-width="1.6" stroke-linecap="round"/>
+<circle cx="0" cy="-50" r="20" fill="url(#f-softglow)" opacity=".55"/>
+<path id="f-bridge-window" d="M-16 -46 C-13 -56 13 -56 16 -46 L16 -41 C13 -49 -13 -49 -16 -41 Z" fill="url(#f-glass)" stroke="#d5a56a" stroke-width="1.3" stroke-linejoin="round"/>
+<g stroke="#b8803e" stroke-width=".9" opacity=".75"><path d="M-8 -52.5 L-8 -46"/><path d="M0 -53.5 L0 -47"/><path d="M8 -52.5 L8 -46"/></g>
+<path d="M-13 -48.5 C-9 -54 9 -54 13 -48.5" fill="none" stroke="#fff8e6" stroke-width=".9" opacity=".8" stroke-linecap="round"/>
+<!-- sensor dome on the roof, white strobe -->
+<path d="M-6 -66 C-5 -71 5 -71 6 -66 Z" fill="#8a3a92" stroke="#d5a56a" stroke-width="1.1"/>
+<circle cx="0" cy="-69" r="1.7" fill="#ffffff"/>
+
+<!-- prow running light: red, dead center, pointing at the camera -->
+<circle cx="0" cy="3" r="5" fill="url(#f-softglow)" opacity=".8"/>
+<circle cx="0" cy="3" r="2.2" fill="#ff8b8b"/>
+</g><g id="shipS" opacity="0">
+<defs>
+ <linearGradient id="s-hull" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#a456ab"/><stop offset=".45" stop-color="#6c1d72"/><stop offset="1" stop-color="#2a0a30"/></linearGradient>
+ <linearGradient id="s-keel" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4a1452"/><stop offset="1" stop-color="#1c0621"/></linearGradient>
+ <linearGradient id="s-nac" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9a4ca2"/><stop offset=".5" stop-color="#5e1a66"/><stop offset="1" stop-color="#2a0a30"/></linearGradient>
+ <linearGradient id="s-pylon" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7a2a82"/><stop offset="1" stop-color="#3a1040"/></linearGradient>
+ <linearGradient id="s-pylonlo" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4e1456"/><stop offset="1" stop-color="#2a0a30"/></linearGradient>
+ <linearGradient id="s-bridge" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#b86cbe"/><stop offset=".6" stop-color="#7a2a82" stop-opacity=".6"/><stop offset="1" stop-color="#6c1d72" stop-opacity="0"/></linearGradient>
+ <linearGradient id="s-glass" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff3d0"/><stop offset=".55" stop-color="#ffd48a"/><stop offset="1" stop-color="#d98f4a"/></linearGradient>
+ <linearGradient id="s-bayin" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#2a0a30"/><stop offset=".5" stop-color="#7a4a2a"/><stop offset="1" stop-color="#2a0a30"/></linearGradient>
+ <radialGradient id="s-glow"><stop offset="0" stop-color="#fff4d2"/><stop offset=".25" stop-color="#ffd48a"/><stop offset=".55" stop-color="#f0aa50" stop-opacity=".45"/><stop offset="1" stop-color="#f0aa50" stop-opacity="0"/></radialGradient>
+ <radialGradient id="s-softglow"><stop offset="0" stop-color="#ffe7b0" stop-opacity=".9"/><stop offset=".5" stop-color="#f0aa50" stop-opacity=".35"/><stop offset="1" stop-color="#f0aa50" stop-opacity="0"/></radialGradient>
+ <radialGradient id="s-orchid"><stop offset="0" stop-color="#f6dcf8"/><stop offset=".45" stop-color="#d9a6dc" stop-opacity=".6"/><stop offset="1" stop-color="#d9a6dc" stop-opacity="0"/></radialGradient>
+</defs>
+
+<!-- engine glow, behind everything -->
+<circle cx="-292" cy="8" r="96" fill="url(#s-glow)" opacity=".85"/>
+
+<!-- UPPER NACELLE on its swept pylon (pylon root is covered by the hull) -->
+<path d="M-100 -54 L-148 -54 L-186 -84 L-150 -84 Z" fill="url(#s-pylon)"/>
+<path d="M-250 -108 H-86 C-70 -108 -64 -101 -64 -95 C-64 -89 -70 -82 -86 -82 H-250 C-262 -82 -268 -89 -268 -95 C-268 -101 -262 -108 -250 -108 Z" fill="url(#s-nac)"/>
+<path d="M-240 -97 H-104" stroke="#d9a6dc" stroke-opacity=".45" stroke-width="3" stroke-linecap="round"/>
+<path d="M-240 -97 H-104" stroke="#1c0621" stroke-opacity=".5" stroke-width="1" stroke-linecap="round"/>
+<ellipse cx="-66" cy="-95" rx="6" ry="12" fill="#d5a56a"/>
+<ellipse cx="-66" cy="-95" rx="3" ry="8" fill="#ffe7b0"/>
+<circle cx="-62" cy="-95" r="16" fill="url(#s-orchid)" opacity=".8"/>
+<ellipse cx="-266" cy="-95" rx="5" ry="10" fill="#3a1040" stroke="#d5a56a" stroke-width="1.2"/>
+<circle cx="-269" cy="-95" r="2.2" fill="#ff8b8b"/>
+
+<!-- LOWER NACELLE on its swept pylon -->
+<path d="M-100 62 L-148 62 L-186 96 L-150 96 Z" fill="url(#s-pylonlo)"/>
+<path d="M-250 92 H-86 C-70 92 -64 99 -64 105 C-64 111 -70 118 -86 118 H-250 C-262 118 -268 111 -268 105 C-268 99 -262 92 -250 92 Z" fill="url(#s-nac)"/>
+<path d="M-240 103 H-104" stroke="#d9a6dc" stroke-opacity=".45" stroke-width="3" stroke-linecap="round"/>
+<path d="M-240 103 H-104" stroke="#1c0621" stroke-opacity=".5" stroke-width="1" stroke-linecap="round"/>
+<ellipse cx="-66" cy="105" rx="6" ry="12" fill="#d5a56a"/>
+<ellipse cx="-66" cy="105" rx="3" ry="8" fill="#ffe7b0"/>
+<circle cx="-62" cy="105" r="16" fill="url(#s-orchid)" opacity=".8"/>
+<ellipse cx="-266" cy="105" rx="5" ry="10" fill="#3a1040" stroke="#d5a56a" stroke-width="1.2"/>
+<circle cx="-269" cy="105" r="2.2" fill="#ff8b8b"/>
+
+<!-- MAIN HULL: one outline, nose to stern over the terraced dorsal, back along the keel -->
+<path id="s-hull-outline" d="M298 -2 C284 -10 262 -17 242 -21 C238 -22 235 -26 234 -32 C231 -46 224 -55 206 -57 L172 -57 C158 -57 150 -48 142 -36 C110 -34 70 -34 44 -36 C38 -36 36 -44 28 -46 C-10 -48 -40 -50 -62 -52 C-70 -52 -72 -60 -80 -62 C-140 -66 -200 -66 -236 -58 C-262 -52 -278 -34 -280 -8 C-282 20 -276 44 -256 56 C-200 70 -140 74 -90 74 C-40 70 60 46 150 28 C220 14 268 4 298 -2 Z" fill="url(#s-hull)"/>
+<!-- the dark keel: the dagger underside -->
+<path d="M-256 56 C-200 70 -140 74 -90 74 C-40 70 60 46 150 28 C220 14 268 4 298 -2 C240 8 130 30 -40 50 C-120 58 -200 56 -262 40 Z" fill="url(#s-keel)"/>
+<!-- terrace roofs catch the light -->
+<g fill="none" stroke="#d9a6dc" stroke-opacity=".5" stroke-width="1.4" stroke-linecap="round"><path d="M-232 -58.5 C-200 -65 -140 -65 -82 -61.5"/><path d="M-60 -51.5 C-40 -49.5 -10 -47.5 26 -45.5"/><path d="M42 -35.5 C70 -33.5 110 -31.5 146 -31.5"/><path d="M174 -56.5 H204"/></g>
+<!-- bridge block gets its own lighter face -->
+<path d="M234 -32 C231 -46 224 -55 206 -57 L172 -57 C158 -57 150 -48 142 -36 L142 -26 C170 -25 210 -25 234 -32 Z" fill="url(#s-bridge)"/>
+<!-- gold sheer line, stern to nose -->
+<path d="M-266 8 C-180 12 -60 10 40 4 C140 -4 240 -8 292 -4" fill="none" stroke="#d5a56a" stroke-width="2.6" stroke-linecap="round"/>
+<!-- panel seams -->
+<g fill="none" stroke="#d9a6dc" stroke-opacity=".22" stroke-width="1"><path d="M-200 -64 C-204 -20 -202 30 -196 68"/><path d="M-120 -64 C-124 -20 -122 30 -116 72"/><path d="M-20 -50 C-22 -10 -22 20 -18 58"/><path d="M90 -33 C88 -4 88 14 90 40"/><path d="M160 -24 C158 -4 158 10 160 26"/></g>
+
+<!-- ENGINES: three bells on the stern face, Serenity's firefly tail -->
+<g stroke="#d5a56a" stroke-width="2.4"><ellipse cx="-274" cy="-26" rx="9" ry="15" fill="#24092a"/><ellipse cx="-283" cy="10" rx="12" ry="25" fill="#24092a"/><ellipse cx="-268" cy="44" rx="8" ry="13" fill="#24092a"/></g>
+<g fill="#ffe7b0"><ellipse cx="-275" cy="-26" rx="4.5" ry="10"/><ellipse cx="-285" cy="10" rx="6.5" ry="17"/><ellipse cx="-269" cy="44" rx="3.5" ry="8"/></g>
+<g fill="#fff8e6"><ellipse cx="-276" cy="-26" rx="2" ry="6"/><ellipse cx="-286" cy="10" rx="3" ry="10"/><ellipse cx="-270" cy="44" rx="1.5" ry="4.5"/></g>
+
+<!-- ENGINEERING: radiator grille high on the aft flank, no windows -->
+<rect x="-232" y="-52" width="86" height="20" rx="3" fill="#3a1040" opacity=".6"/>
+<g stroke="#1c0621" stroke-width="2.6" stroke-linecap="round"><path d="M-226 -48 V-36"/><path d="M-217 -48 V-36"/><path d="M-208 -48 V-36"/><path d="M-199 -48 V-36"/><path d="M-190 -48 V-36"/><path d="M-181 -48 V-36"/><path d="M-172 -48 V-36"/><path d="M-163 -48 V-36"/><path d="M-154 -48 V-36"/></g>
+<!-- engineering control room: three windows on the upper terrace -->
+<g fill="#ffe7b0" opacity=".85"><rect x="-116" y="-57" width="5" height="3.6" rx=".8"/><rect x="-107" y="-57" width="5" height="3.6" rx=".8"/><rect x="-98" y="-57" width="5" height="3.6" rx=".8"/></g>
+
+<!-- HANGAR BAY: a lit door on the lower aft flank, approach lights on the keel -->
+<path d="M-214 30 L-134 30 L-130 60 L-218 60 Z" fill="#160519" stroke="#d5a56a" stroke-width="2"/>
+<path d="M-208 35 L-140 35 L-137 56 L-211 56 Z" fill="url(#s-bayin)" opacity=".8"/>
+<path d="M-208 35 L-140 35 L-137 56 L-211 56 Z" fill="url(#s-softglow)" opacity=".6"/>
+<path d="M-211 56 H-137" stroke="#ffd48a" stroke-width="1.4" opacity=".9"/>
+<g fill="#ffd48a"><circle cx="-232" cy="67" r="1.5"/><circle cx="-220" cy="68.5" r="1.5"/><circle cx="-208" cy="69.5" r="1.5"/><circle cx="-196" cy="70.5" r="1.5"/><circle cx="-184" cy="71" r="1.5"/><circle cx="-172" cy="71.5" r="1.5"/><circle cx="-160" cy="72" r="1.5"/><circle cx="-148" cy="72.5" r="1.5"/><circle cx="-136" cy="72.5" r="1.5"/></g>
+
+<!-- MIDSHIP: crew lounge deck on the first terrace -->
+<g fill="#ffe7b0" opacity=".8"><rect x="-50" y="-44" width="5" height="3.4" rx=".8"/><rect x="-39" y="-43.4" width="5" height="3.4" rx=".8"/><rect x="-28" y="-42.8" width="5" height="3.4" rx=".8"/><rect x="-17" y="-42.3" width="5" height="3.4" rx=".8"/><rect x="-6" y="-41.8" width="5" height="3.4" rx=".8"/><rect x="5" y="-41.3" width="5" height="3.4" rx=".8"/><rect x="16" y="-40.8" width="5" height="3.4" rx=".8"/></g>
+
+<!-- FOREBODY: one calm crew-deck row -->
+<g fill="#ffe7b0" opacity=".8"><rect x="96" y="-16.0" width="4.5" height="2.8" rx=".8"/><rect x="112" y="-16.2" width="4.5" height="2.8" rx=".8"/><rect x="128" y="-16.5" width="4.5" height="2.8" rx=".8"/><rect x="144" y="-16.7" width="4.5" height="2.8" rx=".8"/><rect x="160" y="-17.0" width="4.5" height="2.8" rx=".8"/><rect x="176" y="-17.2" width="4.5" height="2.8" rx=".8"/><rect x="192" y="-17.4" width="4.5" height="2.8" rx=".8"/><rect x="208" y="-17.7" width="4.5" height="2.8" rx=".8"/></g>
+
+<!-- OBSERVATION LOUNGE: one quiet pane at the bow -->
+<path d="M240 -10 H260 L258 -5 H240 Z" fill="url(#s-glass)" opacity=".85" stroke="#d5a56a" stroke-width="1"/>
+
+<!-- BRIDGE: the command head. Gold brow along the roof edge, a wide wraparound canopy lit from inside -->
+<path d="M234 -32 C231 -46 224 -55 206 -57 L172 -57" fill="none" stroke="#d5a56a" stroke-width="1.6" stroke-linecap="round"/>
+<circle cx="214" cy="-44" r="22" fill="url(#s-softglow)" opacity=".5"/>
+<path id="s-bridge-window" d="M192 -53.5 L206 -53.5 C218 -52.5 226 -45 229.5 -34.5 L224 -32.5 C221 -41 215 -47 205 -47.5 L192 -47.5 Z" fill="url(#s-glass)" stroke="#d5a56a" stroke-width="1.4" stroke-linejoin="round"/>
+<g stroke="#b8803e" stroke-width="1" opacity=".75"><path d="M200 -53.5 V-47.5"/><path d="M210 -53.2 L209 -47.4"/><path d="M219 -50 L216.5 -44.5"/><path d="M225.5 -42 L221.5 -38.5"/></g>
+<path d="M194 -52 L206 -52 C216 -51 223 -45 226.5 -37" stroke="#fff8e6" stroke-width="1" fill="none" opacity=".8" stroke-linecap="round"/>
+<!-- sensor dome aft on the roof, white strobe -->
+<path d="M174 -57 C176 -63 192 -63 194 -57 Z" fill="#8a3a92" stroke="#d5a56a" stroke-width="1.2"/>
+<circle cx="184" cy="-61" r="1.8" fill="#ffffff"/>
+
+<!-- running lights: port is red (the viewer sees the port side) -->
+<circle cx="293" cy="-4" r="2.4" fill="#ff8b8b"/>
+<circle cx="-230" cy="-60.5" r="1.8" fill="#ffffff"/>
+</g><rect id="flash" x="-400" y="-300" width="800" height="600" fill="#ffe7b0" opacity="0"/></svg>
+<button id="skip" type="button">SKIP</button></div>
+<main>
+  <header class="top">
+    
+    <h1>The Crew</h1>
+    <span class="asof" id="asof"></span><button class="replay" id="replay" type="button">Replay launch</button>
+  </header>
+
+  <div class="scene-wrap"><div class="scene">
+    <canvas id="sky" aria-hidden="true"></canvas>
+    <svg class="stage" id="stage" viewBox="0 0 1600 840" role="img" aria-label="The bridge deck: Captain Steadman on the command dais, the crew at their consoles, and the viewscreen to Slack"></svg>
+  </div></div>
+
+  <section><h2>Crew</h2><div class="roster" id="roster"></div></section>
+  <section><h2>What they send</h2><ul class="feed" id="feed"></ul></section>
+</main>
+
+<script>
+const D={"asof":"","asofLabel":"","crew":[{"station":"command","label":"Command","name":"Captain Steadman","job":"Leads the crew. Relays to Slack.","status":"live","kit":"captain","idle":"","color":"#7a2581","moods":{"steady":"<svg class=\"sm\" viewBox=\"0 0 200 200\" aria-hidden=\"true\" style=\"--plum:#7a2581;overflow:visible\"><g><\/g><path d=\"M46 168 V98 a54 54 0 0 1 108 0 V168 Z\" fill=\"var(--plum)\" />\n    <rect x=\"60\" y=\"164\" width=\"28\" height=\"16\" rx=\"8\" fill=\"var(--plum)\" />\n    <rect x=\"112\" y=\"164\" width=\"28\" height=\"16\" rx=\"8\" fill=\"var(--plum)\" />\n      <ellipse cx=\"80\" cy=\"96\" rx=\"12\" ry=\"14\" fill=\"var(--surface)\" />\n      <ellipse cx=\"120\" cy=\"96\" rx=\"12\" ry=\"14\" fill=\"var(--surface)\" />\n      <circle cx=\"83\" cy=\"99\" r=\"6\" fill=\"var(--ink)\" />\n      <circle cx=\"123\" cy=\"99\" r=\"6\" fill=\"var(--ink)\" />\n      <circle cx=\"85\" cy=\"96\" r=\"2\" fill=\"var(--surface)\" />\n      <circle cx=\"125\" cy=\"96\" r=\"2\" fill=\"var(--surface)\" />\n    <path d=\"M86 124 Q100 134 114 124\" stroke=\"var(--surface)\" stroke-width=\"5\" stroke-linecap=\"round\" fill=\"none\" />\n    <circle cx=\"62\" cy=\"118\" r=\"6\" fill=\"var(--cheek)\" opacity=\"0.7\" />\n    <circle cx=\"138\" cy=\"118\" r=\"6\" fill=\"var(--cheek)\" opacity=\"0.7\" /><g><path d=\"M51.6 74 A54 54 0 0 1 148.4 74 Q100 62 51.6 74 Z\" fill=\"#1c1123\"/>\n    <path d=\"M52 76 Q100 63 148 76\" stroke=\"#fbbe13\" stroke-width=\"7\" stroke-linecap=\"round\" fill=\"none\"/>\n    <circle cx=\"100\" cy=\"56\" r=\"6\" fill=\"#fbbe13\"/><\/g><\/svg>","thinking":"<svg class=\"sm\" viewBox=\"0 0 200 200\" aria-hidden=\"true\" style=\"--plum:#7a2581;overflow:visible\"><g><\/g><path d=\"M46 168 V98 a54 54 0 0 1 108 0 V168 Z\" fill=\"var(--plum)\" />\n    <rect x=\"60\" y=\"164\" width=\"28\" height=\"16\" rx=\"8\" fill=\"var(--plum)\" />\n    <rect x=\"112\" y=\"164\" width=\"28\" height=\"16\" rx=\"8\" fill=\"var(--plum)\" />\n    <ellipse cx=\"80\" cy=\"96\" rx=\"12\" ry=\"14\" fill=\"var(--surface)\" />\n    <ellipse cx=\"120\" cy=\"96\" rx=\"12\" ry=\"14\" fill=\"var(--surface)\" />\n    <circle cx=\"83\" cy=\"99\" r=\"6\" fill=\"var(--ink)\" />\n    <circle cx=\"123\" cy=\"99\" r=\"6\" fill=\"var(--ink)\" />\n    <path d=\"M88 126 L112 126\" stroke=\"var(--surface)\" stroke-width=\"5\" stroke-linecap=\"round\" />\n    <path d=\"M62 82 Q72 88 84 80\" stroke=\"var(--surface)\" stroke-width=\"4\" stroke-linecap=\"round\" fill=\"none\" />\n    <path d=\"M116 80 Q128 88 138 82\" stroke=\"var(--surface)\" stroke-width=\"4\" stroke-linecap=\"round\" fill=\"none\" /><g><path d=\"M51.6 74 A54 54 0 0 1 148.4 74 Q100 62 51.6 74 Z\" fill=\"#1c1123\"/>\n    <path d=\"M52 76 Q100 63 148 76\" stroke=\"#fbbe13\" stroke-width=\"7\" stroke-linecap=\"round\" fill=\"none\"/>\n    <circle cx=\"100\" cy=\"56\" r=\"6\" fill=\"#fbbe13\"/><\/g><\/svg>","resting":"<svg class=\"sm\" viewBox=\"0 0 200 200\" aria-hidden=\"true\" style=\"--plum:#7a2581;overflow:visible\"><g transform=\"translate(0 8)\"><\/g>\n    <path d=\"M46 176 V106 a54 54 0 0 1 108 0 V176 Z\" fill=\"var(--plum)\" />\n    <path d=\"M68 106 Q80 112 92 106\" stroke=\"var(--surface)\" stroke-width=\"6\" stroke-linecap=\"round\" fill=\"none\" />\n    <path d=\"M108 106 Q120 112 132 106\" stroke=\"var(--surface)\" stroke-width=\"6\" stroke-linecap=\"round\" fill=\"none\" />\n    <path d=\"M90 134 Q100 140 110 134\" stroke=\"var(--surface)\" stroke-width=\"5\" stroke-linecap=\"round\" fill=\"none\" />\n    <text x=\"150\" y=\"44\" font-family=\"var(--font-sans)\" font-weight=\"700\" font-size=\"26\" fill=\"var(--muted)\">z<\/text>\n    <text x=\"166\" y=\"28\" font-family=\"var(--font-sans)\" font-weight=\"700\" font-size=\"18\" fill=\"var(--muted)\">z<\/text><g transform=\"translate(0 8)\"><path d=\"M51.6 74 A54 54 0 0 1 148.4 74 Q100 62 51.6 74 Z\" fill=\"#1c1123\"/>\n    <path d=\"M52 76 Q100 63 148 76\" stroke=\"#fbbe13\" stroke-width=\"7\" stroke-linecap=\"round\" fill=\"none\"/>\n    <circle cx=\"100\" cy=\"56\" r=\"6\" fill=\"#fbbe13\"/><\/g><\/svg>"},"sends7":6,"sends24":0,"last":null},{"station":"comms","label":"Comms","name":"Beacon","job":"Answers help-chat questions.","status":"testing","kit":"beacon","idle":"","color":"#cc9a10","moods":{"steady":"<svg class=\"sm\" viewBox=\"0 0 200 200\" aria-hidden=\"true\" style=\"--plum:#cc9a10;overflow:visible\"><g><defs><radialGradient id=\"kGlow\" cx=\"50%\" cy=\"52%\" r=\"50%\"><stop offset=\"0\" stop-color=\"#ffd75a\" stop-opacity=\".75\"/><stop offset=\".55\" stop-color=\"#ffcc33\" stop-opacity=\".28\"/><stop offset=\"1\" stop-color=\"#ffcc33\" stop-opacity=\"0\"/><\/radialGradient>\n    <radialGradient id=\"kLamp\" cx=\"50%\" cy=\"50%\" r=\"50%\"><stop offset=\"0\" stop-color=\"#fff6c8\"/><stop offset=\".5\" stop-color=\"#ffd23f\"/><stop offset=\"1\" stop-color=\"#ffd23f\" stop-opacity=\"0\"/><\/radialGradient><\/defs>\n    <circle cx=\"100\" cy=\"104\" r=\"98\" fill=\"url(#kGlow)\"/>\n    <path d=\"M100 46 V22\" stroke=\"var(--plum)\" stroke-width=\"5\" stroke-linecap=\"round\"/>\n    <circle cx=\"100\" cy=\"17\" r=\"15\" fill=\"url(#kLamp)\"/><circle cx=\"100\" cy=\"17\" r=\"6.5\" fill=\"#fff4bf\"/>\n    <g fill=\"none\" stroke=\"#ffd23f\" stroke-width=\"4\" stroke-linecap=\"round\"><path d=\"M76 10 A28 28 0 0 0 76 26\"/><path d=\"M124 10 A28 28 0 0 1 124 26\"/><\/g><\/g><path d=\"M46 168 V98 a54 54 0 0 1 108 0 V168 Z\" fill=\"var(--plum)\" />\n    <rect x=\"60\" y=\"164\" width=\"28\" height=\"16\" rx=\"8\" fill=\"var(--plum)\" />\n    <rect x=\"112\" y=\"164\" width=\"28\" height=\"16\" rx=\"8\" fill=\"var(--plum)\" />\n      <ellipse cx=\"80\" cy=\"96\" rx=\"12\" ry=\"14\" fill=\"var(--surface)\" />\n      <ellipse cx=\"120\" cy=\"96\" rx=\"12\" ry=\"14\" fill=\"var(--surface)\" />\n      <circle cx=\"83\" cy=\"99\" r=\"6\" fill=\"var(--ink)\" />\n      <circle cx=\"123\" cy=\"99\" r=\"6\" fill=\"var(--ink)\" />\n      <circle cx=\"85\" cy=\"96\" r=\"2\" fill=\"var(--surface)\" />\n      <circle cx=\"125\" cy=\"96\" r=\"2\" fill=\"var(--surface)\" />\n    <path d=\"M86 124 Q100 134 114 124\" stroke=\"var(--surface)\" stroke-width=\"5\" stroke-linecap=\"round\" fill=\"none\" />\n    <circle cx=\"62\" cy=\"118\" r=\"6\" fill=\"var(--cheek)\" opacity=\"0.7\" />\n    <circle cx=\"138\" cy=\"118\" r=\"6\" fill=\"var(--cheek)\" opacity=\"0.7\" /><g><\/g><\/svg>","thinking":"<svg class=\"sm\" viewBox=\"0 0 200 200\" aria-hidden=\"true\" style=\"--plum:#cc9a10;overflow:visible\"><g><defs><radialGradient id=\"kGlow\" cx=\"50%\" cy=\"52%\" r=\"50%\"><stop offset=\"0\" stop-color=\"#ffd75a\" stop-opacity=\".75\"/><stop offset=\".55\" stop-color=\"#ffcc33\" stop-opacity=\".28\"/><stop offset=\"1\" stop-color=\"#ffcc33\" stop-opacity=\"0\"/><\/radialGradient>\n    <radialGradient id=\"kLamp\" cx=\"50%\" cy=\"50%\" r=\"50%\"><stop offset=\"0\" stop-color=\"#fff6c8\"/><stop offset=\".5\" stop-color=\"#ffd23f\"/><stop offset=\"1\" stop-color=\"#ffd23f\" stop-opacity=\"0\"/><\/radialGradient><\/defs>\n    <circle cx=\"100\" cy=\"104\" r=\"98\" fill=\"url(#kGlow)\"/>\n    <path d=\"M100 46 V22\" stroke=\"var(--plum)\" stroke-width=\"5\" stroke-linecap=\"round\"/>\n    <circle cx=\"100\" cy=\"17\" r=\"15\" fill=\"url(#kLamp)\"/><circle cx=\"100\" cy=\"17\" r=\"6.5\" fill=\"#fff4bf\"/>\n    <g fill=\"none\" stroke=\"#ffd23f\" stroke-width=\"4\" stroke-linecap=\"round\"><path d=\"M76 10 A28 28 0 0 0 76 26\"/><path d=\"M124 10 A28 28 0 0 1 124 26\"/><\/g><\/g><path d=\"M46 168 V98 a54 54 0 0 1 108 0 V168 Z\" fill=\"var(--plum)\" />\n    <rect x=\"60\" y=\"164\" width=\"28\" height=\"16\" rx=\"8\" fill=\"var(--plum)\" />\n    <rect x=\"112\" y=\"164\" width=\"28\" height=\"16\" rx=\"8\" fill=\"var(--plum)\" />\n    <ellipse cx=\"80\" cy=\"96\" rx=\"12\" ry=\"14\" fill=\"var(--surface)\" />\n    <ellipse cx=\"120\" cy=\"96\" rx=\"12\" ry=\"14\" fill=\"var(--surface)\" />\n    <circle cx=\"83\" cy=\"99\" r=\"6\" fill=\"var(--ink)\" />\n    <circle cx=\"123\" cy=\"99\" r=\"6\" fill=\"var(--ink)\" />\n    <path d=\"M88 126 L112 126\" stroke=\"var(--surface)\" stroke-width=\"5\" stroke-linecap=\"round\" />\n    <path d=\"M62 82 Q72 88 84 80\" stroke=\"var(--surface)\" stroke-width=\"4\" stroke-linecap=\"round\" fill=\"none\" />\n    <path d=\"M116 80 Q128 88 138 82\" stroke=\"var(--surface)\" stroke-width=\"4\" stroke-linecap=\"round\" fill=\"none\" /><g><\/g><\/svg>","resting":"<svg class=\"sm\" viewBox=\"0 0 200 200\" aria-hidden=\"true\" style=\"--plum:#cc9a10;overflow:visible\"><g transform=\"translate(0 8)\"><defs><radialGradient id=\"kGlow\" cx=\"50%\" cy=\"52%\" r=\"50%\"><stop offset=\"0\" stop-color=\"#ffd75a\" stop-opacity=\".75\"/><stop offset=\".55\" stop-color=\"#ffcc33\" stop-opacity=\".28\"/><stop offset=\"1\" stop-color=\"#ffcc33\" stop-opacity=\"0\"/><\/radialGradient>\n    <radialGradient id=\"kLamp\" cx=\"50%\" cy=\"50%\" r=\"50%\"><stop offset=\"0\" stop-color=\"#fff6c8\"/><stop offset=\".5\" stop-color=\"#ffd23f\"/><stop offset=\"1\" stop-color=\"#ffd23f\" stop-opacity=\"0\"/><\/radialGradient><\/defs>\n    <circle cx=\"100\" cy=\"104\" r=\"98\" fill=\"url(#kGlow)\"/>\n    <path d=\"M100 46 V22\" stroke=\"var(--plum)\" stroke-width=\"5\" stroke-linecap=\"round\"/>\n    <circle cx=\"100\" cy=\"17\" r=\"15\" fill=\"url(#kLamp)\"/><circle cx=\"100\" cy=\"17\" r=\"6.5\" fill=\"#fff4bf\"/>\n    <g fill=\"none\" stroke=\"#ffd23f\" stroke-width=\"4\" stroke-linecap=\"round\"><path d=\"M76 10 A28 28 0 0 0 76 26\"/><path d=\"M124 10 A28 28 0 0 1 124 26\"/><\/g><\/g>\n    <path d=\"M46 176 V106 a54 54 0 0 1 108 0 V176 Z\" fill=\"var(--plum)\" />\n    <path d=\"M68 106 Q80 112 92 106\" stroke=\"var(--surface)\" stroke-width=\"6\" stroke-linecap=\"round\" fill=\"none\" />\n    <path d=\"M108 106 Q120 112 132 106\" stroke=\"var(--surface)\" stroke-width=\"6\" stroke-linecap=\"round\" fill=\"none\" />\n    <path d=\"M90 134 Q100 140 110 134\" stroke=\"var(--surface)\" stroke-width=\"5\" stroke-linecap=\"round\" fill=\"none\" />\n    <text x=\"150\" y=\"44\" font-family=\"var(--font-sans)\" font-weight=\"700\" font-size=\"26\" fill=\"var(--muted)\">z<\/text>\n    <text x=\"166\" y=\"28\" font-family=\"var(--font-sans)\" font-weight=\"700\" font-size=\"18\" fill=\"var(--muted)\">z<\/text><g transform=\"translate(0 8)\"><\/g><\/svg>"},"sends7":6,"sends24":0,"last":null},{"station":"ops","label":"Ops","name":"Gunny","job":"Keeps agents' work moving.","status":"testing","kit":"gunny","idle":"","color":"#4c7c38","moods":{"steady":"<svg class=\"sm\" viewBox=\"0 0 200 200\" aria-hidden=\"true\" style=\"--plum:#4c7c38;overflow:visible\"><g><\/g><path d=\"M46 168 V98 a54 54 0 0 1 108 0 V168 Z\" fill=\"var(--plum)\" />\n    <rect x=\"60\" y=\"164\" width=\"28\" height=\"16\" rx=\"8\" fill=\"var(--plum)\" />\n    <rect x=\"112\" y=\"164\" width=\"28\" height=\"16\" rx=\"8\" fill=\"var(--plum)\" />\n      <ellipse cx=\"80\" cy=\"96\" rx=\"12\" ry=\"14\" fill=\"var(--surface)\" />\n      <ellipse cx=\"120\" cy=\"96\" rx=\"12\" ry=\"14\" fill=\"var(--surface)\" />\n      <circle cx=\"83\" cy=\"99\" r=\"6\" fill=\"var(--ink)\" />\n      <circle cx=\"123\" cy=\"99\" r=\"6\" fill=\"var(--ink)\" />\n      <circle cx=\"85\" cy=\"96\" r=\"2\" fill=\"var(--surface)\" />\n      <circle cx=\"125\" cy=\"96\" r=\"2\" fill=\"var(--surface)\" />\n    <path d=\"M86 124 Q100 134 114 124\" stroke=\"var(--surface)\" stroke-width=\"5\" stroke-linecap=\"round\" fill=\"none\" />\n    <circle cx=\"62\" cy=\"118\" r=\"6\" fill=\"var(--cheek)\" opacity=\"0.7\" />\n    <circle cx=\"138\" cy=\"118\" r=\"6\" fill=\"var(--cheek)\" opacity=\"0.7\" /><g><path d=\"M50 82 V70 Q50 46 100 44 Q150 46 150 70 V82 Z\" fill=\"#3a5a2b\"/>\n    <path d=\"M50 70 Q100 60 150 70\" stroke=\"#2c4520\" stroke-width=\"2\" fill=\"none\"/>\n    <path d=\"M44 84 Q100 70 156 84 Q158 90 150 90 Q100 80 50 90 Q42 90 44 84 Z\" fill=\"#26391b\"/>\n    <path d=\"M127 133 l11 11 M138 133 l-11 11\" stroke=\"#22361a\" stroke-width=\"3.6\" stroke-linecap=\"round\"/>\n    <path d=\"M64 140 l8 -3 M66 146 l8 -3\" stroke=\"#2f4d22\" stroke-width=\"2.4\" stroke-linecap=\"round\"/>\n    <g fill=\"#2f4d22\" opacity=\".55\"><circle cx=\"90\" cy=\"140\" r=\"1.3\"/><circle cx=\"96\" cy=\"143\" r=\"1.3\"/><circle cx=\"104\" cy=\"143\" r=\"1.3\"/><circle cx=\"110\" cy=\"140\" r=\"1.3\"/><circle cx=\"100\" cy=\"146\" r=\"1.3\"/><\/g><\/g><\/svg>","thinking":"<svg class=\"sm\" viewBox=\"0 0 200 200\" aria-hidden=\"true\" style=\"--plum:#4c7c38;overflow:visible\"><g><\/g><path d=\"M46 168 V98 a54 54 0 0 1 108 0 V168 Z\" fill=\"var(--plum)\" />\n    <rect x=\"60\" y=\"164\" width=\"28\" height=\"16\" rx=\"8\" fill=\"var(--plum)\" />\n    <rect x=\"112\" y=\"164\" width=\"28\" height=\"16\" rx=\"8\" fill=\"var(--plum)\" />\n    <ellipse cx=\"80\" cy=\"96\" rx=\"12\" ry=\"14\" fill=\"var(--surface)\" />\n    <ellipse cx=\"120\" cy=\"96\" rx=\"12\" ry=\"14\" fill=\"var(--surface)\" />\n    <circle cx=\"83\" cy=\"99\" r=\"6\" fill=\"var(--ink)\" />\n    <circle cx=\"123\" cy=\"99\" r=\"6\" fill=\"var(--ink)\" />\n    <path d=\"M88 126 L112 126\" stroke=\"var(--surface)\" stroke-width=\"5\" stroke-linecap=\"round\" />\n    <path d=\"M62 82 Q72 88 84 80\" stroke=\"var(--surface)\" stroke-width=\"4\" stroke-linecap=\"round\" fill=\"none\" />\n    <path d=\"M116 80 Q128 88 138 82\" stroke=\"var(--surface)\" stroke-width=\"4\" stroke-linecap=\"round\" fill=\"none\" /><g><path d=\"M50 82 V70 Q50 46 100 44 Q150 46 150 70 V82 Z\" fill=\"#3a5a2b\"/>\n    <path d=\"M50 70 Q100 60 150 70\" stroke=\"#2c4520\" stroke-width=\"2\" fill=\"none\"/>\n    <path d=\"M44 84 Q100 70 156 84 Q158 90 150 90 Q100 80 50 90 Q42 90 44 84 Z\" fill=\"#26391b\"/>\n    <path d=\"M127 133 l11 11 M138 133 l-11 11\" stroke=\"#22361a\" stroke-width=\"3.6\" stroke-linecap=\"round\"/>\n    <path d=\"M64 140 l8 -3 M66 146 l8 -3\" stroke=\"#2f4d22\" stroke-width=\"2.4\" stroke-linecap=\"round\"/>\n    <g fill=\"#2f4d22\" opacity=\".55\"><circle cx=\"90\" cy=\"140\" r=\"1.3\"/><circle cx=\"96\" cy=\"143\" r=\"1.3\"/><circle cx=\"104\" cy=\"143\" r=\"1.3\"/><circle cx=\"110\" cy=\"140\" r=\"1.3\"/><circle cx=\"100\" cy=\"146\" r=\"1.3\"/><\/g><\/g><\/svg>","resting":"<svg class=\"sm\" viewBox=\"0 0 200 200\" aria-hidden=\"true\" style=\"--plum:#4c7c38;overflow:visible\"><g transform=\"translate(0 8)\"><\/g>\n    <path d=\"M46 176 V106 a54 54 0 0 1 108 0 V176 Z\" fill=\"var(--plum)\" />\n    <path d=\"M68 106 Q80 112 92 106\" stroke=\"var(--surface)\" stroke-width=\"6\" stroke-linecap=\"round\" fill=\"none\" />\n    <path d=\"M108 106 Q120 112 132 106\" stroke=\"var(--surface)\" stroke-width=\"6\" stroke-linecap=\"round\" fill=\"none\" />\n    <path d=\"M90 134 Q100 140 110 134\" stroke=\"var(--surface)\" stroke-width=\"5\" stroke-linecap=\"round\" fill=\"none\" />\n    <text x=\"150\" y=\"44\" font-family=\"var(--font-sans)\" font-weight=\"700\" font-size=\"26\" fill=\"var(--muted)\">z<\/text>\n    <text x=\"166\" y=\"28\" font-family=\"var(--font-sans)\" font-weight=\"700\" font-size=\"18\" fill=\"var(--muted)\">z<\/text><g transform=\"translate(0 8)\"><path d=\"M50 82 V70 Q50 46 100 44 Q150 46 150 70 V82 Z\" fill=\"#3a5a2b\"/>\n    <path d=\"M50 70 Q100 60 150 70\" stroke=\"#2c4520\" stroke-width=\"2\" fill=\"none\"/>\n    <path d=\"M44 84 Q100 70 156 84 Q158 90 150 90 Q100 80 50 90 Q42 90 44 84 Z\" fill=\"#26391b\"/>\n    <path d=\"M127 133 l11 11 M138 133 l-11 11\" stroke=\"#22361a\" stroke-width=\"3.6\" stroke-linecap=\"round\"/>\n    <path d=\"M64 140 l8 -3 M66 146 l8 -3\" stroke=\"#2f4d22\" stroke-width=\"2.4\" stroke-linecap=\"round\"/>\n    <g fill=\"#2f4d22\" opacity=\".55\"><circle cx=\"90\" cy=\"140\" r=\"1.3\"/><circle cx=\"96\" cy=\"143\" r=\"1.3\"/><circle cx=\"104\" cy=\"143\" r=\"1.3\"/><circle cx=\"110\" cy=\"140\" r=\"1.3\"/><circle cx=\"100\" cy=\"146\" r=\"1.3\"/><\/g><\/g><\/svg>"},"sends7":6,"sends24":0,"last":null},{"station":"admin","label":"Admin","name":"Chopper","job":"Fills forms and writes records.","status":"testing","kit":"chopper","idle":"","color":"#9e3b2c","moods":{"steady":"<svg class=\"sm\" viewBox=\"0 0 200 200\" aria-hidden=\"true\" style=\"--plum:#9e3b2c;overflow:visible\"><g><\/g><path d=\"M46 168 V98 a54 54 0 0 1 108 0 V168 Z\" fill=\"var(--plum)\" />\n    <rect x=\"60\" y=\"164\" width=\"28\" height=\"16\" rx=\"8\" fill=\"var(--plum)\" />\n    <rect x=\"112\" y=\"164\" width=\"28\" height=\"16\" rx=\"8\" fill=\"var(--plum)\" />\n      <ellipse cx=\"80\" cy=\"96\" rx=\"12\" ry=\"14\" fill=\"var(--surface)\" />\n      <ellipse cx=\"120\" cy=\"96\" rx=\"12\" ry=\"14\" fill=\"var(--surface)\" />\n      <circle cx=\"83\" cy=\"99\" r=\"6\" fill=\"var(--ink)\" />\n      <circle cx=\"123\" cy=\"99\" r=\"6\" fill=\"var(--ink)\" />\n      <circle cx=\"85\" cy=\"96\" r=\"2\" fill=\"var(--surface)\" />\n      <circle cx=\"125\" cy=\"96\" r=\"2\" fill=\"var(--surface)\" />\n    <path d=\"M86 124 Q100 134 114 124\" stroke=\"var(--surface)\" stroke-width=\"5\" stroke-linecap=\"round\" fill=\"none\" />\n    <circle cx=\"62\" cy=\"118\" r=\"6\" fill=\"var(--cheek)\" opacity=\"0.7\" />\n    <circle cx=\"138\" cy=\"118\" r=\"6\" fill=\"var(--cheek)\" opacity=\"0.7\" /><g><path d=\"M78 46 L70 18 M122 46 L132 22\" stroke=\"#d6d6d6\" stroke-width=\"4\" stroke-linecap=\"round\"/>\n<circle cx=\"70\" cy=\"16\" r=\"5\" fill=\"#f08a24\"/><circle cx=\"132\" cy=\"20\" r=\"4\" fill=\"#f08a24\"/>\n<path d=\"M52 78 Q100 60 148 78\" stroke=\"#f08a24\" stroke-width=\"9\" fill=\"none\" stroke-linecap=\"round\"/>\n<path d=\"M64 80 L94 88 M136 80 L106 88\" stroke=\"#1c1123\" stroke-width=\"5\" stroke-linecap=\"round\"/>\n<path d=\"M154 120 l18 -6 l6 10 l-6 4 l-4 -6 l-12 4 Z\" fill=\"#d6d6d6\" stroke=\"#8a8a8a\" stroke-width=\"2\"/>\n<path d=\"M46 124 l-16 4 l-2 14 l8 0 l2 -8 l10 -2\" fill=\"#f08a24\"/>\n<rect x=\"88\" y=\"146\" width=\"24\" height=\"10\" rx=\"3\" fill=\"#f08a24\"/><\/g><\/svg>","thinking":"<svg class=\"sm\" viewBox=\"0 0 200 200\" aria-hidden=\"true\" style=\"--plum:#9e3b2c;overflow:visible\"><g><\/g><path d=\"M46 168 V98 a54 54 0 0 1 108 0 V168 Z\" fill=\"var(--plum)\" />\n    <rect x=\"60\" y=\"164\" width=\"28\" height=\"16\" rx=\"8\" fill=\"var(--plum)\" />\n    <rect x=\"112\" y=\"164\" width=\"28\" height=\"16\" rx=\"8\" fill=\"var(--plum)\" />\n    <ellipse cx=\"80\" cy=\"96\" rx=\"12\" ry=\"14\" fill=\"var(--surface)\" />\n    <ellipse cx=\"120\" cy=\"96\" rx=\"12\" ry=\"14\" fill=\"var(--surface)\" />\n    <circle cx=\"83\" cy=\"99\" r=\"6\" fill=\"var(--ink)\" />\n    <circle cx=\"123\" cy=\"99\" r=\"6\" fill=\"var(--ink)\" />\n    <path d=\"M88 126 L112 126\" stroke=\"var(--surface)\" stroke-width=\"5\" stroke-linecap=\"round\" />\n    <path d=\"M62 82 Q72 88 84 80\" stroke=\"var(--surface)\" stroke-width=\"4\" stroke-linecap=\"round\" fill=\"none\" />\n    <path d=\"M116 80 Q128 88 138 82\" stroke=\"var(--surface)\" stroke-width=\"4\" stroke-linecap=\"round\" fill=\"none\" /><g><path d=\"M78 46 L70 18 M122 46 L132 22\" stroke=\"#d6d6d6\" stroke-width=\"4\" stroke-linecap=\"round\"/>\n<circle cx=\"70\" cy=\"16\" r=\"5\" fill=\"#f08a24\"/><circle cx=\"132\" cy=\"20\" r=\"4\" fill=\"#f08a24\"/>\n<path d=\"M52 78 Q100 60 148 78\" stroke=\"#f08a24\" stroke-width=\"9\" fill=\"none\" stroke-linecap=\"round\"/>\n<path d=\"M64 80 L94 88 M136 80 L106 88\" stroke=\"#1c1123\" stroke-width=\"5\" stroke-linecap=\"round\"/>\n<path d=\"M154 120 l18 -6 l6 10 l-6 4 l-4 -6 l-12 4 Z\" fill=\"#d6d6d6\" stroke=\"#8a8a8a\" stroke-width=\"2\"/>\n<path d=\"M46 124 l-16 4 l-2 14 l8 0 l2 -8 l10 -2\" fill=\"#f08a24\"/>\n<rect x=\"88\" y=\"146\" width=\"24\" height=\"10\" rx=\"3\" fill=\"#f08a24\"/><\/g><\/svg>","resting":"<svg class=\"sm\" viewBox=\"0 0 200 200\" aria-hidden=\"true\" style=\"--plum:#9e3b2c;overflow:visible\"><g transform=\"translate(0 8)\"><\/g>\n    <path d=\"M46 176 V106 a54 54 0 0 1 108 0 V176 Z\" fill=\"var(--plum)\" />\n    <path d=\"M68 106 Q80 112 92 106\" stroke=\"var(--surface)\" stroke-width=\"6\" stroke-linecap=\"round\" fill=\"none\" />\n    <path d=\"M108 106 Q120 112 132 106\" stroke=\"var(--surface)\" stroke-width=\"6\" stroke-linecap=\"round\" fill=\"none\" />\n    <path d=\"M90 134 Q100 140 110 134\" stroke=\"var(--surface)\" stroke-width=\"5\" stroke-linecap=\"round\" fill=\"none\" />\n    <text x=\"150\" y=\"44\" font-family=\"var(--font-sans)\" font-weight=\"700\" font-size=\"26\" fill=\"var(--muted)\">z<\/text>\n    <text x=\"166\" y=\"28\" font-family=\"var(--font-sans)\" font-weight=\"700\" font-size=\"18\" fill=\"var(--muted)\">z<\/text><g transform=\"translate(0 8)\"><path d=\"M78 46 L70 18 M122 46 L132 22\" stroke=\"#d6d6d6\" stroke-width=\"4\" stroke-linecap=\"round\"/>\n<circle cx=\"70\" cy=\"16\" r=\"5\" fill=\"#f08a24\"/><circle cx=\"132\" cy=\"20\" r=\"4\" fill=\"#f08a24\"/>\n<path d=\"M52 78 Q100 60 148 78\" stroke=\"#f08a24\" stroke-width=\"9\" fill=\"none\" stroke-linecap=\"round\"/>\n<path d=\"M64 80 L94 88 M136 80 L106 88\" stroke=\"#1c1123\" stroke-width=\"5\" stroke-linecap=\"round\"/>\n<path d=\"M154 120 l18 -6 l6 10 l-6 4 l-4 -6 l-12 4 Z\" fill=\"#d6d6d6\" stroke=\"#8a8a8a\" stroke-width=\"2\"/>\n<path d=\"M46 124 l-16 4 l-2 14 l8 0 l2 -8 l10 -2\" fill=\"#f08a24\"/>\n<rect x=\"88\" y=\"146\" width=\"24\" height=\"10\" rx=\"3\" fill=\"#f08a24\"/><\/g><\/svg>"},"sends7":6,"sends24":0,"last":null},{"station":"science","label":"Science","name":"Fido","job":"Finds and checks the data.","status":"live","kit":"fido","idle":"","color":"#58697a","moods":{"steady":"<svg class=\"sm\" viewBox=\"0 0 200 200\" aria-hidden=\"true\" style=\"--plum:#58697a;overflow:visible\"><g><\/g><path d=\"M46 168 V98 a54 54 0 0 1 108 0 V168 Z\" fill=\"var(--plum)\" />\n    <rect x=\"60\" y=\"164\" width=\"28\" height=\"16\" rx=\"8\" fill=\"var(--plum)\" />\n    <rect x=\"112\" y=\"164\" width=\"28\" height=\"16\" rx=\"8\" fill=\"var(--plum)\" />\n      <ellipse cx=\"80\" cy=\"96\" rx=\"12\" ry=\"14\" fill=\"var(--surface)\" />\n      <ellipse cx=\"120\" cy=\"96\" rx=\"12\" ry=\"14\" fill=\"var(--surface)\" />\n      <circle cx=\"83\" cy=\"99\" r=\"6\" fill=\"var(--ink)\" />\n      <circle cx=\"123\" cy=\"99\" r=\"6\" fill=\"var(--ink)\" />\n      <circle cx=\"85\" cy=\"96\" r=\"2\" fill=\"var(--surface)\" />\n      <circle cx=\"125\" cy=\"96\" r=\"2\" fill=\"var(--surface)\" />\n    <path d=\"M86 124 Q100 134 114 124\" stroke=\"var(--surface)\" stroke-width=\"5\" stroke-linecap=\"round\" fill=\"none\" />\n    <circle cx=\"62\" cy=\"118\" r=\"6\" fill=\"var(--cheek)\" opacity=\"0.7\" />\n    <circle cx=\"138\" cy=\"118\" r=\"6\" fill=\"var(--cheek)\" opacity=\"0.7\" /><g><g fill=\"none\" stroke=\"#7fe9f5\" stroke-width=\"2.4\" stroke-linecap=\"round\" opacity=\".75\">\n<path d=\"M58 150 V136 H70 V124\"/><path d=\"M142 150 V140 H130\"/><path d=\"M100 168 V156 H114\"/>\n<\/g>\n<g fill=\"#7fe9f5\"><circle cx=\"70\" cy=\"122\" r=\"3.2\"/><circle cx=\"128\" cy=\"140\" r=\"3.2\"/><circle cx=\"116\" cy=\"156\" r=\"3.2\"/><circle cx=\"58\" cy=\"152\" r=\"2.6\"/><circle cx=\"142\" cy=\"152\" r=\"2.6\"/><\/g>\n<path d=\"M40 98 A62 62 0 0 1 160 98\" stroke=\"#8e9aa6\" stroke-width=\"4\" fill=\"none\" stroke-linecap=\"round\"/>\n<rect x=\"30\" y=\"84\" width=\"20\" height=\"32\" rx=\"8\" fill=\"#2c3a46\" stroke=\"#8e9aa6\" stroke-width=\"2.5\"/>\n<rect x=\"150\" y=\"84\" width=\"20\" height=\"32\" rx=\"8\" fill=\"#2c3a46\" stroke=\"#8e9aa6\" stroke-width=\"2.5\"/>\n<circle cx=\"40\" cy=\"100\" r=\"5\" fill=\"#7fe9f5\"/><circle cx=\"160\" cy=\"100\" r=\"5\" fill=\"#7fe9f5\"/>\n<path d=\"M38 116 Q42 134 72 132\" stroke=\"#8e9aa6\" stroke-width=\"3.5\" fill=\"none\" stroke-linecap=\"round\"/>\n<circle cx=\"74\" cy=\"132\" r=\"4.5\" fill=\"#7fe9f5\"/>\n<path d=\"M48 84 Q100 72 152 84 V108 Q100 120 48 108 Z\" fill=\"rgba(90,220,235,.40)\" stroke=\"#1b2a33\" stroke-width=\"5\"/>\n<path d=\"M58 90 H82 M58 96 H74 M118 90 H142 M126 96 H142\" stroke=\"#c9f8ff\" stroke-width=\"2.5\" stroke-linecap=\"round\" opacity=\".9\"/>\n<path d=\"M58 104 l6 -4 l5 3 l6 -6 l6 5\" stroke=\"#c9f8ff\" stroke-width=\"2\" fill=\"none\" stroke-linecap=\"round\" opacity=\".9\"/>\n<circle cx=\"142\" cy=\"104\" r=\"2.8\" fill=\"#7dffb0\"/><\/g><\/svg>","thinking":"<svg class=\"sm\" viewBox=\"0 0 200 200\" aria-hidden=\"true\" style=\"--plum:#58697a;overflow:visible\"><g><\/g><path d=\"M46 168 V98 a54 54 0 0 1 108 0 V168 Z\" fill=\"var(--plum)\" />\n    <rect x=\"60\" y=\"164\" width=\"28\" height=\"16\" rx=\"8\" fill=\"var(--plum)\" />\n    <rect x=\"112\" y=\"164\" width=\"28\" height=\"16\" rx=\"8\" fill=\"var(--plum)\" />\n    <ellipse cx=\"80\" cy=\"96\" rx=\"12\" ry=\"14\" fill=\"var(--surface)\" />\n    <ellipse cx=\"120\" cy=\"96\" rx=\"12\" ry=\"14\" fill=\"var(--surface)\" />\n    <circle cx=\"83\" cy=\"99\" r=\"6\" fill=\"var(--ink)\" />\n    <circle cx=\"123\" cy=\"99\" r=\"6\" fill=\"var(--ink)\" />\n    <path d=\"M88 126 L112 126\" stroke=\"var(--surface)\" stroke-width=\"5\" stroke-linecap=\"round\" />\n    <path d=\"M62 82 Q72 88 84 80\" stroke=\"var(--surface)\" stroke-width=\"4\" stroke-linecap=\"round\" fill=\"none\" />\n    <path d=\"M116 80 Q128 88 138 82\" stroke=\"var(--surface)\" stroke-width=\"4\" stroke-linecap=\"round\" fill=\"none\" /><g><g fill=\"none\" stroke=\"#7fe9f5\" stroke-width=\"2.4\" stroke-linecap=\"round\" opacity=\".75\">\n<path d=\"M58 150 V136 H70 V124\"/><path d=\"M142 150 V140 H130\"/><path d=\"M100 168 V156 H114\"/>\n<\/g>\n<g fill=\"#7fe9f5\"><circle cx=\"70\" cy=\"122\" r=\"3.2\"/><circle cx=\"128\" cy=\"140\" r=\"3.2\"/><circle cx=\"116\" cy=\"156\" r=\"3.2\"/><circle cx=\"58\" cy=\"152\" r=\"2.6\"/><circle cx=\"142\" cy=\"152\" r=\"2.6\"/><\/g>\n<path d=\"M40 98 A62 62 0 0 1 160 98\" stroke=\"#8e9aa6\" stroke-width=\"4\" fill=\"none\" stroke-linecap=\"round\"/>\n<rect x=\"30\" y=\"84\" width=\"20\" height=\"32\" rx=\"8\" fill=\"#2c3a46\" stroke=\"#8e9aa6\" stroke-width=\"2.5\"/>\n<rect x=\"150\" y=\"84\" width=\"20\" height=\"32\" rx=\"8\" fill=\"#2c3a46\" stroke=\"#8e9aa6\" stroke-width=\"2.5\"/>\n<circle cx=\"40\" cy=\"100\" r=\"5\" fill=\"#7fe9f5\"/><circle cx=\"160\" cy=\"100\" r=\"5\" fill=\"#7fe9f5\"/>\n<path d=\"M38 116 Q42 134 72 132\" stroke=\"#8e9aa6\" stroke-width=\"3.5\" fill=\"none\" stroke-linecap=\"round\"/>\n<circle cx=\"74\" cy=\"132\" r=\"4.5\" fill=\"#7fe9f5\"/>\n<path d=\"M48 84 Q100 72 152 84 V108 Q100 120 48 108 Z\" fill=\"rgba(90,220,235,.40)\" stroke=\"#1b2a33\" stroke-width=\"5\"/>\n<path d=\"M58 90 H82 M58 96 H74 M118 90 H142 M126 96 H142\" stroke=\"#c9f8ff\" stroke-width=\"2.5\" stroke-linecap=\"round\" opacity=\".9\"/>\n<path d=\"M58 104 l6 -4 l5 3 l6 -6 l6 5\" stroke=\"#c9f8ff\" stroke-width=\"2\" fill=\"none\" stroke-linecap=\"round\" opacity=\".9\"/>\n<circle cx=\"142\" cy=\"104\" r=\"2.8\" fill=\"#7dffb0\"/><\/g><\/svg>","resting":"<svg class=\"sm\" viewBox=\"0 0 200 200\" aria-hidden=\"true\" style=\"--plum:#58697a;overflow:visible\"><g transform=\"translate(0 8)\"><\/g>\n    <path d=\"M46 176 V106 a54 54 0 0 1 108 0 V176 Z\" fill=\"var(--plum)\" />\n    <path d=\"M68 106 Q80 112 92 106\" stroke=\"var(--surface)\" stroke-width=\"6\" stroke-linecap=\"round\" fill=\"none\" />\n    <path d=\"M108 106 Q120 112 132 106\" stroke=\"var(--surface)\" stroke-width=\"6\" stroke-linecap=\"round\" fill=\"none\" />\n    <path d=\"M90 134 Q100 140 110 134\" stroke=\"var(--surface)\" stroke-width=\"5\" stroke-linecap=\"round\" fill=\"none\" />\n    <text x=\"150\" y=\"44\" font-family=\"var(--font-sans)\" font-weight=\"700\" font-size=\"26\" fill=\"var(--muted)\">z<\/text>\n    <text x=\"166\" y=\"28\" font-family=\"var(--font-sans)\" font-weight=\"700\" font-size=\"18\" fill=\"var(--muted)\">z<\/text><g transform=\"translate(0 8)\"><g fill=\"none\" stroke=\"#7fe9f5\" stroke-width=\"2.4\" stroke-linecap=\"round\" opacity=\".75\">\n<path d=\"M58 150 V136 H70 V124\"/><path d=\"M142 150 V140 H130\"/><path d=\"M100 168 V156 H114\"/>\n<\/g>\n<g fill=\"#7fe9f5\"><circle cx=\"70\" cy=\"122\" r=\"3.2\"/><circle cx=\"128\" cy=\"140\" r=\"3.2\"/><circle cx=\"116\" cy=\"156\" r=\"3.2\"/><circle cx=\"58\" cy=\"152\" r=\"2.6\"/><circle cx=\"142\" cy=\"152\" r=\"2.6\"/><\/g>\n<path d=\"M40 98 A62 62 0 0 1 160 98\" stroke=\"#8e9aa6\" stroke-width=\"4\" fill=\"none\" stroke-linecap=\"round\"/>\n<rect x=\"30\" y=\"84\" width=\"20\" height=\"32\" rx=\"8\" fill=\"#2c3a46\" stroke=\"#8e9aa6\" stroke-width=\"2.5\"/>\n<rect x=\"150\" y=\"84\" width=\"20\" height=\"32\" rx=\"8\" fill=\"#2c3a46\" stroke=\"#8e9aa6\" stroke-width=\"2.5\"/>\n<circle cx=\"40\" cy=\"100\" r=\"5\" fill=\"#7fe9f5\"/><circle cx=\"160\" cy=\"100\" r=\"5\" fill=\"#7fe9f5\"/>\n<path d=\"M38 116 Q42 134 72 132\" stroke=\"#8e9aa6\" stroke-width=\"3.5\" fill=\"none\" stroke-linecap=\"round\"/>\n<circle cx=\"74\" cy=\"132\" r=\"4.5\" fill=\"#7fe9f5\"/>\n<path d=\"M48 84 Q100 72 152 84 V108 Q100 120 48 108 Z\" fill=\"rgba(90,220,235,.40)\" stroke=\"#1b2a33\" stroke-width=\"5\"/>\n<path d=\"M58 90 H82 M58 96 H74 M118 90 H142 M126 96 H142\" stroke=\"#c9f8ff\" stroke-width=\"2.5\" stroke-linecap=\"round\" opacity=\".9\"/>\n<path d=\"M58 104 l6 -4 l5 3 l6 -6 l6 5\" stroke=\"#c9f8ff\" stroke-width=\"2\" fill=\"none\" stroke-linecap=\"round\" opacity=\".9\"/>\n<circle cx=\"142\" cy=\"104\" r=\"2.8\" fill=\"#7dffb0\"/><\/g><\/svg>"},"sends7":6,"sends24":0,"last":null},{"station":"engineering","label":"Engineering","name":"Sparks","job":"Keeps Mission Control running.","status":"live","kit":"sparks","idle":"","color":"#a86f2c","moods":{"steady":"<svg class=\"sm\" viewBox=\"0 0 200 200\" aria-hidden=\"true\" style=\"--plum:#a86f2c;overflow:visible\"><g><\/g><path d=\"M46 168 V98 a54 54 0 0 1 108 0 V168 Z\" fill=\"var(--plum)\" />\n    <rect x=\"60\" y=\"164\" width=\"28\" height=\"16\" rx=\"8\" fill=\"var(--plum)\" />\n    <rect x=\"112\" y=\"164\" width=\"28\" height=\"16\" rx=\"8\" fill=\"var(--plum)\" />\n      <ellipse cx=\"80\" cy=\"96\" rx=\"12\" ry=\"14\" fill=\"var(--surface)\" />\n      <ellipse cx=\"120\" cy=\"96\" rx=\"12\" ry=\"14\" fill=\"var(--surface)\" />\n      <circle cx=\"83\" cy=\"99\" r=\"6\" fill=\"var(--ink)\" />\n      <circle cx=\"123\" cy=\"99\" r=\"6\" fill=\"var(--ink)\" />\n      <circle cx=\"85\" cy=\"96\" r=\"2\" fill=\"var(--surface)\" />\n      <circle cx=\"125\" cy=\"96\" r=\"2\" fill=\"var(--surface)\" />\n    <path d=\"M86 124 Q100 134 114 124\" stroke=\"var(--surface)\" stroke-width=\"5\" stroke-linecap=\"round\" fill=\"none\" />\n    <circle cx=\"62\" cy=\"118\" r=\"6\" fill=\"var(--cheek)\" opacity=\"0.7\" />\n    <circle cx=\"138\" cy=\"118\" r=\"6\" fill=\"var(--cheek)\" opacity=\"0.7\" /><g><g transform=\"rotate(28 166 142)\"><rect x=\"160\" y=\"124\" width=\"12\" height=\"50\" rx=\"5\" fill=\"#9aa3ab\"/><path d=\"M152 118 a14 14 0 1 1 28 0 v-0 h-8 v-12 h-12 v12 Z\" fill=\"#9aa3ab\"/><rect x=\"163\" y=\"134\" width=\"6\" height=\"30\" rx=\"3\" fill=\"#7d868e\"/><\/g>\n<path d=\"M50 76 Q100 58 150 76\" stroke=\"#5a3b1e\" stroke-width=\"8\" stroke-linecap=\"round\" fill=\"none\"/>\n<circle cx=\"80\" cy=\"66\" r=\"13\" fill=\"#bfe0ea\" stroke=\"#3b2a1a\" stroke-width=\"5\"/><circle cx=\"120\" cy=\"66\" r=\"13\" fill=\"#bfe0ea\" stroke=\"#3b2a1a\" stroke-width=\"5\"/>\n<path d=\"M93 66 H107\" stroke=\"#3b2a1a\" stroke-width=\"4\"/>\n<path d=\"M73 62 a8 8 0 0 1 8 -5 M113 62 a8 8 0 0 1 8 -5\" stroke=\"#ffffff\" stroke-width=\"2.5\" stroke-linecap=\"round\" fill=\"none\" opacity=\".85\"/>\n<path d=\"M100 115 C92 109 80 109 72 118 C82 123 92 122 100 118 C108 122 118 123 128 118 C120 109 108 109 100 115 Z\" fill=\"#dcd5cb\"/><\/g><\/svg>","thinking":"<svg class=\"sm\" viewBox=\"0 0 200 200\" aria-hidden=\"true\" style=\"--plum:#a86f2c;overflow:visible\"><g><\/g><path d=\"M46 168 V98 a54 54 0 0 1 108 0 V168 Z\" fill=\"var(--plum)\" />\n    <rect x=\"60\" y=\"164\" width=\"28\" height=\"16\" rx=\"8\" fill=\"var(--plum)\" />\n    <rect x=\"112\" y=\"164\" width=\"28\" height=\"16\" rx=\"8\" fill=\"var(--plum)\" />\n    <ellipse cx=\"80\" cy=\"96\" rx=\"12\" ry=\"14\" fill=\"var(--surface)\" />\n    <ellipse cx=\"120\" cy=\"96\" rx=\"12\" ry=\"14\" fill=\"var(--surface)\" />\n    <circle cx=\"83\" cy=\"99\" r=\"6\" fill=\"var(--ink)\" />\n    <circle cx=\"123\" cy=\"99\" r=\"6\" fill=\"var(--ink)\" />\n    <path d=\"M88 126 L112 126\" stroke=\"var(--surface)\" stroke-width=\"5\" stroke-linecap=\"round\" />\n    <path d=\"M62 82 Q72 88 84 80\" stroke=\"var(--surface)\" stroke-width=\"4\" stroke-linecap=\"round\" fill=\"none\" />\n    <path d=\"M116 80 Q128 88 138 82\" stroke=\"var(--surface)\" stroke-width=\"4\" stroke-linecap=\"round\" fill=\"none\" /><g><g transform=\"rotate(28 166 142)\"><rect x=\"160\" y=\"124\" width=\"12\" height=\"50\" rx=\"5\" fill=\"#9aa3ab\"/><path d=\"M152 118 a14 14 0 1 1 28 0 v-0 h-8 v-12 h-12 v12 Z\" fill=\"#9aa3ab\"/><rect x=\"163\" y=\"134\" width=\"6\" height=\"30\" rx=\"3\" fill=\"#7d868e\"/><\/g>\n<path d=\"M50 76 Q100 58 150 76\" stroke=\"#5a3b1e\" stroke-width=\"8\" stroke-linecap=\"round\" fill=\"none\"/>\n<circle cx=\"80\" cy=\"66\" r=\"13\" fill=\"#bfe0ea\" stroke=\"#3b2a1a\" stroke-width=\"5\"/><circle cx=\"120\" cy=\"66\" r=\"13\" fill=\"#bfe0ea\" stroke=\"#3b2a1a\" stroke-width=\"5\"/>\n<path d=\"M93 66 H107\" stroke=\"#3b2a1a\" stroke-width=\"4\"/>\n<path d=\"M73 62 a8 8 0 0 1 8 -5 M113 62 a8 8 0 0 1 8 -5\" stroke=\"#ffffff\" stroke-width=\"2.5\" stroke-linecap=\"round\" fill=\"none\" opacity=\".85\"/>\n<path d=\"M100 115 C92 109 80 109 72 118 C82 123 92 122 100 118 C108 122 118 123 128 118 C120 109 108 109 100 115 Z\" fill=\"#dcd5cb\"/><\/g><\/svg>","resting":"<svg class=\"sm\" viewBox=\"0 0 200 200\" aria-hidden=\"true\" style=\"--plum:#a86f2c;overflow:visible\"><g transform=\"translate(0 8)\"><\/g>\n    <path d=\"M46 176 V106 a54 54 0 0 1 108 0 V176 Z\" fill=\"var(--plum)\" />\n    <path d=\"M68 106 Q80 112 92 106\" stroke=\"var(--surface)\" stroke-width=\"6\" stroke-linecap=\"round\" fill=\"none\" />\n    <path d=\"M108 106 Q120 112 132 106\" stroke=\"var(--surface)\" stroke-width=\"6\" stroke-linecap=\"round\" fill=\"none\" />\n    <path d=\"M90 134 Q100 140 110 134\" stroke=\"var(--surface)\" stroke-width=\"5\" stroke-linecap=\"round\" fill=\"none\" />\n    <text x=\"150\" y=\"44\" font-family=\"var(--font-sans)\" font-weight=\"700\" font-size=\"26\" fill=\"var(--muted)\">z<\/text>\n    <text x=\"166\" y=\"28\" font-family=\"var(--font-sans)\" font-weight=\"700\" font-size=\"18\" fill=\"var(--muted)\">z<\/text><g transform=\"translate(0 8)\"><g transform=\"rotate(28 166 142)\"><rect x=\"160\" y=\"124\" width=\"12\" height=\"50\" rx=\"5\" fill=\"#9aa3ab\"/><path d=\"M152 118 a14 14 0 1 1 28 0 v-0 h-8 v-12 h-12 v12 Z\" fill=\"#9aa3ab\"/><rect x=\"163\" y=\"134\" width=\"6\" height=\"30\" rx=\"3\" fill=\"#7d868e\"/><\/g>\n<path d=\"M50 76 Q100 58 150 76\" stroke=\"#5a3b1e\" stroke-width=\"8\" stroke-linecap=\"round\" fill=\"none\"/>\n<circle cx=\"80\" cy=\"66\" r=\"13\" fill=\"#bfe0ea\" stroke=\"#3b2a1a\" stroke-width=\"5\"/><circle cx=\"120\" cy=\"66\" r=\"13\" fill=\"#bfe0ea\" stroke=\"#3b2a1a\" stroke-width=\"5\"/>\n<path d=\"M93 66 H107\" stroke=\"#3b2a1a\" stroke-width=\"4\"/>\n<path d=\"M73 62 a8 8 0 0 1 8 -5 M113 62 a8 8 0 0 1 8 -5\" stroke=\"#ffffff\" stroke-width=\"2.5\" stroke-linecap=\"round\" fill=\"none\" opacity=\".85\"/>\n<path d=\"M100 115 C92 109 80 109 72 118 C82 123 92 122 100 118 C108 122 118 123 128 118 C120 109 108 109 100 115 Z\" fill=\"#dcd5cb\"/><\/g><\/svg>"},"sends7":6,"sends24":0,"last":null},{"station":"helm","label":"Helm","name":"Wash","job":"Steers patterns toward fixes.","status":"reserved","kit":"wash","idle":"<g class=\"dino a\"><g transform=\"translate(158 122)\"><path d=\"M0 22 q2 -16 13 -18 q9 -2 11 -12 q5 2 3 9 q-2 9 -11 12 q5 12 0 18 h-4 v-7 h-7 v7 h-5 Z\" fill=\"#4c9a4c\"/><circle cx=\"21\" cy=\"-6\" r=\"1.5\" fill=\"#1c1123\"/><path d=\"M19 -1 l5 1\" stroke=\"#1c1123\" stroke-width=\"1.4\"/><\/g><\/g><g class=\"dino b\"><g transform=\"translate(14 136)\"><path d=\"M2 20 q4 -14 18 -14 q12 0 16 14 Z\" fill=\"#5a8fd0\"/><path d=\"M8 8 l3 -7 l4 6 l4 -8 l4 8 l4 -6 l3 7\" fill=\"#e8b34a\"/><circle cx=\"34\" cy=\"14\" r=\"1.4\" fill=\"#1c1123\"/><rect x=\"8\" y=\"20\" width=\"5\" height=\"6\" fill=\"#5a8fd0\"/><rect x=\"26\" y=\"20\" width=\"5\" height=\"6\" fill=\"#5a8fd0\"/><\/g><\/g>","color":"#2f86b8","moods":{"steady":"<svg class=\"sm\" viewBox=\"0 0 200 200\" aria-hidden=\"true\" style=\"--plum:#2f86b8;overflow:visible\"><g><\/g><path d=\"M46 168 V98 a54 54 0 0 1 108 0 V168 Z\" fill=\"var(--plum)\" />\n    <rect x=\"60\" y=\"164\" width=\"28\" height=\"16\" rx=\"8\" fill=\"var(--plum)\" />\n    <rect x=\"112\" y=\"164\" width=\"28\" height=\"16\" rx=\"8\" fill=\"var(--plum)\" />\n      <ellipse cx=\"80\" cy=\"96\" rx=\"12\" ry=\"14\" fill=\"var(--surface)\" />\n      <ellipse cx=\"120\" cy=\"96\" rx=\"12\" ry=\"14\" fill=\"var(--surface)\" />\n      <circle cx=\"83\" cy=\"99\" r=\"6\" fill=\"var(--ink)\" />\n      <circle cx=\"123\" cy=\"99\" r=\"6\" fill=\"var(--ink)\" />\n      <circle cx=\"85\" cy=\"96\" r=\"2\" fill=\"var(--surface)\" />\n      <circle cx=\"125\" cy=\"96\" r=\"2\" fill=\"var(--surface)\" />\n    <path d=\"M86 124 Q100 134 114 124\" stroke=\"var(--surface)\" stroke-width=\"5\" stroke-linecap=\"round\" fill=\"none\" />\n    <circle cx=\"62\" cy=\"118\" r=\"6\" fill=\"var(--cheek)\" opacity=\"0.7\" />\n    <circle cx=\"138\" cy=\"118\" r=\"6\" fill=\"var(--cheek)\" opacity=\"0.7\" /><g><path d=\"M46 132 H154 V168 H46 Z\" fill=\"#f2a24e\"/>\n<path d=\"M84 132 L100 152 L116 132\" fill=\"#2f86b8\"/>\n<path d=\"M78 132 L90 146 L100 152 M122 132 L110 146 L100 152\" stroke=\"#e07f2a\" stroke-width=\"3\" fill=\"none\" stroke-linejoin=\"round\"/>\n<g fill=\"#e8476f\"><circle cx=\"60\" cy=\"146\" r=\"7\"/><circle cx=\"138\" cy=\"150\" r=\"7\"/><circle cx=\"74\" cy=\"162\" r=\"5.5\"/><circle cx=\"124\" cy=\"164\" r=\"5\"/><circle cx=\"100\" cy=\"164\" r=\"4.5\"/><\/g>\n<g fill=\"#fff3c4\"><circle cx=\"60\" cy=\"146\" r=\"2.6\"/><circle cx=\"138\" cy=\"150\" r=\"2.6\"/><circle cx=\"74\" cy=\"162\" r=\"2\"/><circle cx=\"124\" cy=\"164\" r=\"2\"/><circle cx=\"100\" cy=\"164\" r=\"1.8\"/><\/g>\n<g fill=\"#2f8f5f\"><path d=\"M66 154 q7 -7 12 2 q-7 3 -12 -2Z\"/><path d=\"M128 140 q7 -7 12 2 q-7 3 -12 -2Z\"/><path d=\"M110 156 q6 -6 10 2 q-6 2 -10 -2Z\"/><path d=\"M48 160 q6 -6 10 2 q-6 2 -10 -2Z\"/><\/g><\/g><\/svg>","thinking":"<svg class=\"sm\" viewBox=\"0 0 200 200\" aria-hidden=\"true\" style=\"--plum:#2f86b8;overflow:visible\"><g><\/g><path d=\"M46 168 V98 a54 54 0 0 1 108 0 V168 Z\" fill=\"var(--plum)\" />\n    <rect x=\"60\" y=\"164\" width=\"28\" height=\"16\" rx=\"8\" fill=\"var(--plum)\" />\n    <rect x=\"112\" y=\"164\" width=\"28\" height=\"16\" rx=\"8\" fill=\"var(--plum)\" />\n    <ellipse cx=\"80\" cy=\"96\" rx=\"12\" ry=\"14\" fill=\"var(--surface)\" />\n    <ellipse cx=\"120\" cy=\"96\" rx=\"12\" ry=\"14\" fill=\"var(--surface)\" />\n    <circle cx=\"83\" cy=\"99\" r=\"6\" fill=\"var(--ink)\" />\n    <circle cx=\"123\" cy=\"99\" r=\"6\" fill=\"var(--ink)\" />\n    <path d=\"M88 126 L112 126\" stroke=\"var(--surface)\" stroke-width=\"5\" stroke-linecap=\"round\" />\n    <path d=\"M62 82 Q72 88 84 80\" stroke=\"var(--surface)\" stroke-width=\"4\" stroke-linecap=\"round\" fill=\"none\" />\n    <path d=\"M116 80 Q128 88 138 82\" stroke=\"var(--surface)\" stroke-width=\"4\" stroke-linecap=\"round\" fill=\"none\" /><g><path d=\"M46 132 H154 V168 H46 Z\" fill=\"#f2a24e\"/>\n<path d=\"M84 132 L100 152 L116 132\" fill=\"#2f86b8\"/>\n<path d=\"M78 132 L90 146 L100 152 M122 132 L110 146 L100 152\" stroke=\"#e07f2a\" stroke-width=\"3\" fill=\"none\" stroke-linejoin=\"round\"/>\n<g fill=\"#e8476f\"><circle cx=\"60\" cy=\"146\" r=\"7\"/><circle cx=\"138\" cy=\"150\" r=\"7\"/><circle cx=\"74\" cy=\"162\" r=\"5.5\"/><circle cx=\"124\" cy=\"164\" r=\"5\"/><circle cx=\"100\" cy=\"164\" r=\"4.5\"/><\/g>\n<g fill=\"#fff3c4\"><circle cx=\"60\" cy=\"146\" r=\"2.6\"/><circle cx=\"138\" cy=\"150\" r=\"2.6\"/><circle cx=\"74\" cy=\"162\" r=\"2\"/><circle cx=\"124\" cy=\"164\" r=\"2\"/><circle cx=\"100\" cy=\"164\" r=\"1.8\"/><\/g>\n<g fill=\"#2f8f5f\"><path d=\"M66 154 q7 -7 12 2 q-7 3 -12 -2Z\"/><path d=\"M128 140 q7 -7 12 2 q-7 3 -12 -2Z\"/><path d=\"M110 156 q6 -6 10 2 q-6 2 -10 -2Z\"/><path d=\"M48 160 q6 -6 10 2 q-6 2 -10 -2Z\"/><\/g><\/g><\/svg>","resting":"<svg class=\"sm\" viewBox=\"0 0 200 200\" aria-hidden=\"true\" style=\"--plum:#2f86b8;overflow:visible\"><g transform=\"translate(0 8)\"><\/g>\n    <path d=\"M46 176 V106 a54 54 0 0 1 108 0 V176 Z\" fill=\"var(--plum)\" />\n    <path d=\"M68 106 Q80 112 92 106\" stroke=\"var(--surface)\" stroke-width=\"6\" stroke-linecap=\"round\" fill=\"none\" />\n    <path d=\"M108 106 Q120 112 132 106\" stroke=\"var(--surface)\" stroke-width=\"6\" stroke-linecap=\"round\" fill=\"none\" />\n    <path d=\"M90 134 Q100 140 110 134\" stroke=\"var(--surface)\" stroke-width=\"5\" stroke-linecap=\"round\" fill=\"none\" />\n    <text x=\"150\" y=\"44\" font-family=\"var(--font-sans)\" font-weight=\"700\" font-size=\"26\" fill=\"var(--muted)\">z<\/text>\n    <text x=\"166\" y=\"28\" font-family=\"var(--font-sans)\" font-weight=\"700\" font-size=\"18\" fill=\"var(--muted)\">z<\/text><g transform=\"translate(0 8)\"><path d=\"M46 132 H154 V168 H46 Z\" fill=\"#f2a24e\"/>\n<path d=\"M84 132 L100 152 L116 132\" fill=\"#2f86b8\"/>\n<path d=\"M78 132 L90 146 L100 152 M122 132 L110 146 L100 152\" stroke=\"#e07f2a\" stroke-width=\"3\" fill=\"none\" stroke-linejoin=\"round\"/>\n<g fill=\"#e8476f\"><circle cx=\"60\" cy=\"146\" r=\"7\"/><circle cx=\"138\" cy=\"150\" r=\"7\"/><circle cx=\"74\" cy=\"162\" r=\"5.5\"/><circle cx=\"124\" cy=\"164\" r=\"5\"/><circle cx=\"100\" cy=\"164\" r=\"4.5\"/><\/g>\n<g fill=\"#fff3c4\"><circle cx=\"60\" cy=\"146\" r=\"2.6\"/><circle cx=\"138\" cy=\"150\" r=\"2.6\"/><circle cx=\"74\" cy=\"162\" r=\"2\"/><circle cx=\"124\" cy=\"164\" r=\"2\"/><circle cx=\"100\" cy=\"164\" r=\"1.8\"/><\/g>\n<g fill=\"#2f8f5f\"><path d=\"M66 154 q7 -7 12 2 q-7 3 -12 -2Z\"/><path d=\"M128 140 q7 -7 12 2 q-7 3 -12 -2Z\"/><path d=\"M110 156 q6 -6 10 2 q-6 2 -10 -2Z\"/><path d=\"M48 160 q6 -6 10 2 q-6 2 -10 -2Z\"/><\/g><\/g><\/svg>"},"sends7":0,"sends24":0,"last":null},{"station":"medbay","label":"Medbay","name":"Bones","job":"Finds customers in trouble.","status":"reserved","kit":"bones","idle":"","color":"#2f7f7a","moods":{"steady":"<svg class=\"sm\" viewBox=\"0 0 200 200\" aria-hidden=\"true\" style=\"--plum:#2f7f7a;overflow:visible\"><g><\/g><path d=\"M46 168 V98 a54 54 0 0 1 108 0 V168 Z\" fill=\"var(--plum)\" />\n    <rect x=\"60\" y=\"164\" width=\"28\" height=\"16\" rx=\"8\" fill=\"var(--plum)\" />\n    <rect x=\"112\" y=\"164\" width=\"28\" height=\"16\" rx=\"8\" fill=\"var(--plum)\" />\n      <ellipse cx=\"80\" cy=\"96\" rx=\"12\" ry=\"14\" fill=\"var(--surface)\" />\n      <ellipse cx=\"120\" cy=\"96\" rx=\"12\" ry=\"14\" fill=\"var(--surface)\" />\n      <circle cx=\"83\" cy=\"99\" r=\"6\" fill=\"var(--ink)\" />\n      <circle cx=\"123\" cy=\"99\" r=\"6\" fill=\"var(--ink)\" />\n      <circle cx=\"85\" cy=\"96\" r=\"2\" fill=\"var(--surface)\" />\n      <circle cx=\"125\" cy=\"96\" r=\"2\" fill=\"var(--surface)\" />\n    <path d=\"M86 124 Q100 134 114 124\" stroke=\"var(--surface)\" stroke-width=\"5\" stroke-linecap=\"round\" fill=\"none\" />\n    <circle cx=\"62\" cy=\"118\" r=\"6\" fill=\"var(--cheek)\" opacity=\"0.7\" />\n    <circle cx=\"138\" cy=\"118\" r=\"6\" fill=\"var(--cheek)\" opacity=\"0.7\" /><g><path d=\"M50 74 Q100 60 150 74\" stroke=\"#e6e6e6\" stroke-width=\"5\" fill=\"none\"/>\n<circle cx=\"100\" cy=\"62\" r=\"13\" fill=\"#dfe7ec\" stroke=\"#9aa6ad\" stroke-width=\"3\"/><circle cx=\"100\" cy=\"62\" r=\"4\" fill=\"#1c1123\"/>\n<path d=\"M72 132 Q72 160 100 160 Q128 160 128 132\" stroke=\"#2a2a2e\" stroke-width=\"4\" fill=\"none\" stroke-linecap=\"round\"/>\n<circle cx=\"100\" cy=\"160\" r=\"6\" fill=\"#c9cfd3\" stroke=\"#2a2a2e\" stroke-width=\"3\"/>\n<rect x=\"138\" y=\"140\" width=\"18\" height=\"18\" rx=\"3\" fill=\"#ffffff\"/><path d=\"M147 143 V155 M141 149 H153\" stroke=\"#d64545\" stroke-width=\"4\"/><\/g><\/svg>","thinking":"<svg class=\"sm\" viewBox=\"0 0 200 200\" aria-hidden=\"true\" style=\"--plum:#2f7f7a;overflow:visible\"><g><\/g><path d=\"M46 168 V98 a54 54 0 0 1 108 0 V168 Z\" fill=\"var(--plum)\" />\n    <rect x=\"60\" y=\"164\" width=\"28\" height=\"16\" rx=\"8\" fill=\"var(--plum)\" />\n    <rect x=\"112\" y=\"164\" width=\"28\" height=\"16\" rx=\"8\" fill=\"var(--plum)\" />\n    <ellipse cx=\"80\" cy=\"96\" rx=\"12\" ry=\"14\" fill=\"var(--surface)\" />\n    <ellipse cx=\"120\" cy=\"96\" rx=\"12\" ry=\"14\" fill=\"var(--surface)\" />\n    <circle cx=\"83\" cy=\"99\" r=\"6\" fill=\"var(--ink)\" />\n    <circle cx=\"123\" cy=\"99\" r=\"6\" fill=\"var(--ink)\" />\n    <path d=\"M88 126 L112 126\" stroke=\"var(--surface)\" stroke-width=\"5\" stroke-linecap=\"round\" />\n    <path d=\"M62 82 Q72 88 84 80\" stroke=\"var(--surface)\" stroke-width=\"4\" stroke-linecap=\"round\" fill=\"none\" />\n    <path d=\"M116 80 Q128 88 138 82\" stroke=\"var(--surface)\" stroke-width=\"4\" stroke-linecap=\"round\" fill=\"none\" /><g><path d=\"M50 74 Q100 60 150 74\" stroke=\"#e6e6e6\" stroke-width=\"5\" fill=\"none\"/>\n<circle cx=\"100\" cy=\"62\" r=\"13\" fill=\"#dfe7ec\" stroke=\"#9aa6ad\" stroke-width=\"3\"/><circle cx=\"100\" cy=\"62\" r=\"4\" fill=\"#1c1123\"/>\n<path d=\"M72 132 Q72 160 100 160 Q128 160 128 132\" stroke=\"#2a2a2e\" stroke-width=\"4\" fill=\"none\" stroke-linecap=\"round\"/>\n<circle cx=\"100\" cy=\"160\" r=\"6\" fill=\"#c9cfd3\" stroke=\"#2a2a2e\" stroke-width=\"3\"/>\n<rect x=\"138\" y=\"140\" width=\"18\" height=\"18\" rx=\"3\" fill=\"#ffffff\"/><path d=\"M147 143 V155 M141 149 H153\" stroke=\"#d64545\" stroke-width=\"4\"/><\/g><\/svg>","resting":"<svg class=\"sm\" viewBox=\"0 0 200 200\" aria-hidden=\"true\" style=\"--plum:#2f7f7a;overflow:visible\"><g transform=\"translate(0 8)\"><\/g>\n    <path d=\"M46 176 V106 a54 54 0 0 1 108 0 V176 Z\" fill=\"var(--plum)\" />\n    <path d=\"M68 106 Q80 112 92 106\" stroke=\"var(--surface)\" stroke-width=\"6\" stroke-linecap=\"round\" fill=\"none\" />\n    <path d=\"M108 106 Q120 112 132 106\" stroke=\"var(--surface)\" stroke-width=\"6\" stroke-linecap=\"round\" fill=\"none\" />\n    <path d=\"M90 134 Q100 140 110 134\" stroke=\"var(--surface)\" stroke-width=\"5\" stroke-linecap=\"round\" fill=\"none\" />\n    <text x=\"150\" y=\"44\" font-family=\"var(--font-sans)\" font-weight=\"700\" font-size=\"26\" fill=\"var(--muted)\">z<\/text>\n    <text x=\"166\" y=\"28\" font-family=\"var(--font-sans)\" font-weight=\"700\" font-size=\"18\" fill=\"var(--muted)\">z<\/text><g transform=\"translate(0 8)\"><path d=\"M50 74 Q100 60 150 74\" stroke=\"#e6e6e6\" stroke-width=\"5\" fill=\"none\"/>\n<circle cx=\"100\" cy=\"62\" r=\"13\" fill=\"#dfe7ec\" stroke=\"#9aa6ad\" stroke-width=\"3\"/><circle cx=\"100\" cy=\"62\" r=\"4\" fill=\"#1c1123\"/>\n<path d=\"M72 132 Q72 160 100 160 Q128 160 128 132\" stroke=\"#2a2a2e\" stroke-width=\"4\" fill=\"none\" stroke-linecap=\"round\"/>\n<circle cx=\"100\" cy=\"160\" r=\"6\" fill=\"#c9cfd3\" stroke=\"#2a2a2e\" stroke-width=\"3\"/>\n<rect x=\"138\" y=\"140\" width=\"18\" height=\"18\" rx=\"3\" fill=\"#ffffff\"/><path d=\"M147 143 V155 M141 149 H153\" stroke=\"#d64545\" stroke-width=\"4\"/><\/g><\/svg>"},"sends7":0,"sends24":0,"last":null}],"feed":[{"t":"","by":"Beacon","what":"Answered a help-chat question","n":1,"to":"help chat"},{"t":"","by":"Gunny","what":"Sent the morning case card","n":1,"to":"DM"},{"t":"","by":"Chopper","what":"Drafted renewal ACORDs","n":1,"to":"DM"},{"t":"","by":"Sparks","what":"Refreshed Queue Commander","n":1,"to":"page"},{"t":"","by":"Captain Steadman","what":"Posted the daily summary","n":1,"to":"channel"},{"t":"","by":"Fido","what":"Checked a number before a page used it","n":1,"to":"session"}]};
+(()=>{
+const $=s=>document.querySelector(s),E=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const NS="http://www.w3.org/2000/svg",RM=matchMedia("(prefers-reduced-motion: reduce)").matches;
+const ST={live:["live","Live"],testing:["test","Testing"],planned:["","Test soon"],reserved:["","Reserved"],open:["","Open post"]};
+const ago=iso=>{if(!iso)return"none in 7 days";const h=(Date.now()-Date.parse(iso))/36e5;return h<1?"under an hour ago":h<48?Math.round(h)+" h ago":Math.round(h/24)+" days ago"};
+const when=iso=>new Date(iso).toLocaleString("en-US",{timeZone:"America/Chicago",weekday:"short",hour:"numeric",minute:"2-digit"});
+const rnd=(lo,hi)=>lo+Math.random()*(hi-lo);
+$("#asof").textContent="Examples, not live";
+
+// ---- The deck. Berths fill the back row first; a new station takes the next free berth.
+const BERTHS=[[330,478],[575,478],[1025,478],[1270,478],[235,736],[505,736],[1095,736],[1365,736]];
+const DAIS={x:800,y:640},SCREEN_Y=300;
+const depth=y=>0.72+(y-360)/480*0.42;
+const cap=D.crew.find(m=>m.station==="command"),posts=D.crew.filter(m=>m!==cap);
+const working=m=>m&&(m.sends7>0||m.checks24>0);  // Engineering works while its checks run
+
+let wall=`<defs>
+  <linearGradient id="gFloor" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2b1531"/><stop offset="1" stop-color="#0e0612"/></linearGradient>
+  <linearGradient id="gWall" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1e0d23"/><stop offset="1" stop-color="#170a1b"/></linearGradient>
+  <radialGradient id="gDais" cx="50%" cy="40%"><stop offset="0" stop-color="#5a2b5f"/><stop offset="1" stop-color="#25112a"/></radialGradient>
+  <clipPath id="cFloor"><path d="M0 360 H1600 V840 H0 Z"/></clipPath>
+</defs>
+<path fill-rule="evenodd" fill="url(#gWall)" d="M0 0 H1600 V360 H0 Z M398 34 H1202 A18 18 0 0 1 1220 52 V282 A18 18 0 0 1 1202 300 H398 A18 18 0 0 1 380 282 V52 A18 18 0 0 1 398 34 Z"/>
+<g fill="rgba(253,245,252,.05)">${Array.from({length:15},(_,i)=>`<rect x="${70+i*100}" y="6" width="56" height="5" rx="2.5"/>`).join("")}</g>
+<path d="M0 30 L300 60 V340 L0 360 Z M1600 30 L1300 60 V340 L1600 360 Z" fill="rgba(253,245,252,.025)" stroke="rgba(253,245,252,.07)"/>`;
+// Side-wall panels with indicator lights.
+[[40,1],[1460,-1]].forEach(([x0,dir])=>{for(let r=0;r<5;r++)for(let c=0;c<6;c++){const x=x0+dir*(c*36)+(dir<0?100:0),y=110+r*40;
+  const on=Math.random()<.35,col=["#a9cb8e","#d5a56a","#d9a6dc","#f0a092"][Math.floor(Math.random()*4)];
+  wall+=`<rect x="${x}" y="${y}" width="22" height="8" rx="2" fill="${on?col:"rgba(253,245,252,.08)"}" ${on?`class="blink" style="--b:${rnd(2.5,7).toFixed(1)}s;animation-delay:-${rnd(0,6).toFixed(1)}s"`:""}/>`}});
+wall+=`<rect x="380" y="34" width="840" height="266" rx="18" fill="none" stroke="rgba(213,165,106,.6)" stroke-width="2.5"/>
+<rect x="368" y="22" width="864" height="290" rx="26" fill="none" stroke="rgba(253,245,252,.10)" stroke-width="10"/>
+<text class="ticker-k" x="410" y="68">VIEWSCREEN · SLACK</text>
+<text class="ticker-k" id="tkK" x="410" y="228">ON THE WIRE</text>
+<text class="ticker" id="tk" x="410" y="256"></text>
+<text class="ticker2" id="tk2" x="410" y="280"></text>
+<path d="M0 360 H1600 V840 H0 Z" fill="url(#gFloor)"/>
+<g clip-path="url(#cFloor)" stroke="rgba(213,165,106,.07)" stroke-width="1.2" fill="none">
+  ${Array.from({length:15},(_,i)=>`<path d="M800 150 L${-600+i*200} 840"/>`).join("")}
+  ${[400,460,540,640,760].map(y=>`<path d="M0 ${y} H1600"/>`).join("")}
+</g>
+<path d="M420 386 H1180 L1200 416 H400 Z" fill="var(--desk)" stroke="rgba(253,245,252,.10)"/>
+<g>${Array.from({length:18},(_,i)=>`<rect x="${436+i*41}" y="${394}" width="26" height="6" rx="2" fill="${["#d5a56a","#d9a6dc","#a9cb8e"][i%3]}" opacity=".5" class="blink" style="--b:${rnd(3,8).toFixed(1)}s;animation-delay:-${rnd(0,6).toFixed(1)}s"/>`).join("")}</g>
+<text class="lbl" x="800" y="484" text-anchor="middle">HELM</text>
+<g fill="#1a0b1e" stroke="rgba(213,165,106,.35)" stroke-width="2"><rect x="108" y="228" width="84" height="132" rx="8"/><rect x="1408" y="228" width="84" height="132" rx="8"/></g>
+<g id="doorL"><rect class="dl" x="112" y="232" width="38" height="126" fill="#3a1d40"/><rect class="dr" x="150" y="232" width="38" height="126" fill="#3a1d40"/></g>
+<g id="doorR"><rect class="dl" x="1412" y="232" width="38" height="126" fill="#3a1d40"/><rect class="dr" x="1450" y="232" width="38" height="126" fill="#3a1d40"/></g>
+<g id="beams"></g><g id="world"></g>`;
+const stage=$("#stage");stage.innerHTML=wall;
+const world=$("#world"),beams=$("#beams");
+const el=(tag,attrs,html)=>{const e=document.createElementNS(NS,tag);for(const k in attrs)e.setAttribute(k,attrs[k]);if(html!=null)e.innerHTML=html;return e};
+const items=[];
+const add=(g,y)=>{g.__y=y;items.push(g);world.appendChild(g);return g};
+
+// Command dais, railing and chair.
+add(el("g",{transform:`translate(${DAIS.x},${DAIS.y}) scale(${depth(DAIS.y)})`},`<ellipse cx="0" cy="6" rx="170" ry="38" fill="url(#gDais)" stroke="rgba(213,165,106,.4)"/>
+  <path d="M-170 6 A170 38 0 0 1 170 6" fill="none" stroke="rgba(213,165,106,.35)" stroke-width="3" transform="translate(0,-26)"/>
+  <text class="lbl" x="0" y="70" text-anchor="middle">COMMAND</text>`),DAIS.y-70);
+add(el("g",{transform:`translate(${DAIS.x},${DAIS.y-24}) scale(${depth(DAIS.y)})`},`<path d="M-46 0 V-96 q0 -18 18 -18 h56 q18 0 18 18 V0 Z" fill="#2c1531" stroke="rgba(253,245,252,.12)"/>`),DAIS.y-26);
+
+// Consoles in every berth.
+// The pilot flies from the forward helm console under the viewscreen; every other station takes a berth.
+const HELM={x:800,y:452},berthed=posts.filter(m=>m.station!=="helm");
+berthed.forEach((m,i)=>m.berth=BERTHS[i]);
+BERTHS.forEach((b,i)=>{const m=berthed[i],open=!m||m.status==="open",s=depth(b[1]);
+  let g=`<g class="${working(m)?"":"idle"}"><path d="M-96 -48 H96 L110 0 H-110 Z" fill="var(--desk)" stroke="rgba(253,245,252,.10)"/>
+    <path d="M-96 -48 H96 L100 -38 H-100 Z" fill="var(--desk-top)"/>
+    <rect x="-72" y="-34" width="144" height="24" rx="4" fill="var(--screen)" stroke="${open?"rgba(253,245,252,.12)":m.color}" stroke-opacity=".75"/>`;
+  if(open)g+=`<text class="lbl dim blink" x="0" y="-17" text-anchor="middle" style="font-size:9.5px">${m?"OPEN POST":"SPARE BERTH"}</text>`;
+  else[0,1,2].forEach(k=>g+=`<rect class="bar" style="--type:${(0.9+k*.35).toFixed(2)}s;animation-delay:-${k*.3}s" x="-64" y="${-30+k*6.5}" width="${[90,66,110][k]}" height="3.2" rx="1.5" fill="${m.color}"/>`);
+  g+=`<text class="lbl${open?" dim":""}" x="0" y="24" text-anchor="middle">${m?E(m.label.toUpperCase()):""}</text></g>`;
+  add(el("g",{transform:`translate(${b[0]},${b[1]}) scale(${s})`},g),b[1])});
+
+// ---- Crew. Each has three faces (Steadman's approved moods) and shows one at a time.
+const actors=[];
+function actor(m,home,size){const g=el("g",{}),flip=el("g",{}),wob=el("g",{}),faces={};
+  for(const k of ["steady","thinking","resting"]){const f=el("g",{},m.moods[k].replace('<svg class="sm"',`<svg class="sm" x="${-size/2}" y="${-size*0.9}" width="${size}" height="${size}"`));faces[k]=f;wob.appendChild(f)}
+  if(m.idle){const ig=el("g",{},`<svg class="sm" x="${-size/2}" y="${-size*0.9}" width="${size}" height="${size}" viewBox="0 0 200 200" overflow="visible">${m.idle}</svg>`);faces.idle=null;wob.appendChild(ig);m._idleG=ig}
+  if(m.kit==="beacon")wob.appendChild(el("circle",{class:"ring",cx:0,cy:-size*0.9+size*0.085,r:size*0.07,fill:"none",stroke:"#ffd23f","stroke-width":2}));
+  flip.appendChild(wob);g.appendChild(flip);
+  const pk=el("circle",{cx:0,cy:-size*0.5,r:7,fill:m.color,opacity:0});pk.style.filter=`drop-shadow(0 0 6px ${m.color})`;g.appendChild(pk);
+  g.appendChild(el("text",{class:"tag",x:0,y:16,"text-anchor":"middle"},E(m.name)));
+  const a={m,g,flip,wob,pk,faces,size,x:home.x,y:home.y,home,path:[],speed:80,face:1,phase:Math.random()*6,busy:false,mood:""};
+  add(g,a.y);actors.push(a);return a}
+const setMood=(a,k)=>{if(a.m._idleG)a.m._idleG.setAttribute("display",k==="steady"&&!a.busy&&!working(a.m)?"inline":"none");
+  if(a.mood===k)return;a.mood=k;for(const f in a.faces)a.faces[f]&&a.faces[f].setAttribute("display",f===k?"inline":"none")};
+const C=cap?actor(cap,{x:DAIS.x,y:DAIS.y-12},104):null;
+const crew=posts.filter(m=>m.status!=="open").map(m=>actor(m,m.station==="helm"?{...HELM}:{x:m.berth[0]+(m.berth[0]<DAIS.x?1:-1)*124*depth(m.berth[1]),y:m.berth[1]+10},86));
+const rest=a=>working(a.m)?"thinking":a.m.idle?"steady":"resting";  // a crew member with an idle prop plays instead of napping
+actors.forEach(a=>setMood(a,a===C?"steady":rest(a)));
+
+const go=(a,pts,speed)=>{a.path=pts.map(p=>({...p}));a.speed=speed};
+
+// ---- Report to stations: the side doors open, the captain strides in first and the crew run to their posts.
+const DOORS={L:{x:150,y:372},R:{x:1450,y:372}};
+function doors(open){for(const id of ["doorL","doorR"])for(const r of document.querySelectorAll(`#${id} rect`)){
+  r.style.transition="transform .5s ease";r.style.transform=open?`translateX(${r.classList.contains("dl")?-36:36}px)`:"none"}}
+function scramble(withCaptain=true){doors(true);const order=[...(withCaptain&&C?[C]:[]),...crew];
+  order.forEach((a,i)=>{const d=a.home.x<DAIS.x?DOORS.L:DOORS.R;a.busy=true;a.path=[];a.x=d.x;a.y=d.y;a.g.style.opacity=0;setMood(a,"steady");
+    setTimeout(()=>{a.g.style.opacity=1;go(a,[{x:a.home.x,y:Math.max(a.home.y,d.y+30)},{...a.home,then:()=>{a.busy=false;setMood(a,a===C?"steady":rest(a))}}],a===C?380:290)},120+i*230)});
+  setTimeout(()=>doors(false),order.length*230+1800);return order.length*230+1400}
+
+// ---- The ticker: the newest relay, then whatever each beam carries.
+const tk=$("#tk"),tk2=$("#tk2"),feedBy={},cursor={};D.feed.forEach(f=>(feedBy[f.by]=feedBy[f.by]||[]).push(f));
+const put=f=>{tk.textContent=`${f.by} · ${f.what}`;tk2.textContent=f.to};
+D.feed.length?put(D.feed[0]):(tk.textContent="No relays in the last 7 days.");
+const show=name=>{const fs=feedBy[name];if(!fs)return;put(fs[(cursor[name]=((cursor[name]??-1)+1)%fs.length)])};
+
+// The captain beams a message from the dais up into the viewscreen.
+function beam(color,name){if(!C){show(name);return}setMood(C,"thinking");
+  const b=el("circle",{r:6,fill:color});b.style.filter=`drop-shadow(0 0 10px ${color})`;beams.appendChild(b);
+  const x0=C.x,y0=C.y-C.size*depth(C.y)*0.95,t0=performance.now();
+  (function f(t){const k=Math.min(1,(t-t0)/900),e=k*k;b.setAttribute("cx",x0);b.setAttribute("cy",y0-(y0-SCREEN_Y+20)*e);b.setAttribute("r",6*(1-k*.5));
+    if(k<1)requestAnimationFrame(f);else{b.remove();show(name);setTimeout(()=>setMood(C,"steady"),700)}})(t0)}
+// A crew member walks a message to the captain and back to their post.
+function deliver(a){if(a===C){beam(a.m.color,a.m.name);return}
+  if(a.busy)return;a.busy=true;setMood(a,"steady");a.pk.setAttribute("opacity",1);
+  const side=a.home.x<DAIS.x?-1:1,hand={x:DAIS.x+side*80,y:DAIS.y+14};
+  go(a,[{x:a.x,y:a.y+26},{...hand,then:()=>{a.pk.setAttribute("opacity",0);a.pause=0.6;beam(a.m.color,a.m.name)}},
+        {x:a.home.x,y:a.home.y+26},{...a.home,then:()=>{a.busy=false;setMood(a,rest(a))}}],120)}
+
+// ---- Life at the posts. Mostly still: working crew stay at the console, idle crew nap and wake.
+if(!RM){
+  D.crew.filter(working).forEach((m,i)=>{const a=actors.find(x=>x.m===m);if(!a)return;
+    if(!m.sends7)return;const every=Math.max(14,Math.min(60,70/Math.sqrt(m.sends7)))*1000;
+    const tick=()=>{deliver(a);setTimeout(tick,every*rnd(.75,1.35))};setTimeout(tick,4000+i*5000)});
+  crew.filter(a=>!working(a.m)&&!a.m.idle).forEach(a=>{
+    const nap=()=>{if(!a.busy)setMood(a,"resting");setTimeout(wake,rnd(22000,45000))};
+    const wake=()=>{if(!a.busy){setMood(a,"steady");a.face=Math.random()<.5?-1:1}setTimeout(nap,rnd(7000,14000))};
+    setTimeout(Math.random()<.5?wake:nap,rnd(3000,15000))});
+  // Now and then someone stretches their legs; the captain looks in on a staffed post.
+  const stroll=a=>{if(a.busy||a.path.length)return;a.busy=true;setMood(a,"steady");
+    const tgt=a===C&&crew.length?crew[Math.floor(Math.random()*crew.length)]:null;
+    const p=tgt?{x:tgt.x+(tgt.x<DAIS.x?60:-60),y:tgt.y+30}:{x:a.home.x+rnd(-110,110),y:a.home.y+rnd(30,90)};
+    go(a,[{...p,then:()=>{a.pause=rnd(2.5,5)}},{...a.home,then:()=>{a.busy=false;setMood(a,a===C?"steady":rest(a))}}],60)};
+  actors.forEach(a=>{const tick=()=>{stroll(a);setTimeout(tick,rnd(90000,180000))};setTimeout(tick,rnd(30000,120000))});
+}
+
+// ---- Frame loop: move, breathe, face the way of travel, keep back-to-front order.
+let last=performance.now();
+function frame(t){const dt=Math.min(.05,(t-last)/1000);last=t;
+  for(const a of actors){let moving=false;
+    if(a.pause>0)a.pause-=dt;
+    else if(a.path.length){const p=a.path[0],dx=p.x-a.x,dy=p.y-a.y,d=Math.hypot(dx,dy),step=a.speed*dt*depth(a.y);
+      if(d<=step){a.x=p.x;a.y=p.y;a.path.shift();p.then&&p.then()}else{a.x+=dx/d*step;a.y+=dy/d*step;moving=true;if(Math.abs(dx)>2)a.face=dx<0?-1:1}}
+    const busyHands=!moving&&a.mood==="thinking",asleep=a.mood==="resting";
+    a.phase+=dt*(moving?9:busyHands?7:asleep?1.1:1.8);
+    const bob=moving?Math.abs(Math.sin(a.phase))*5:busyHands?Math.abs(Math.sin(a.phase))*1.2:Math.sin(a.phase)*(asleep?1.6:1),
+      tilt=moving?Math.sin(a.phase)*5:asleep?-4+Math.sin(a.phase)*1.5:0;
+    a.g.setAttribute("transform",`translate(${a.x.toFixed(1)},${a.y.toFixed(1)}) scale(${depth(a.y).toFixed(3)})`);
+    a.flip.setAttribute("transform",`scale(${a.face},1)`);a.wob.setAttribute("transform",`translate(0,${(-bob).toFixed(1)}) rotate(${tilt.toFixed(1)})`);
+    a.g.__y=a.y}
+  const order=[...items].sort((p,q)=>p.__y-q.__y);
+  if(order.some((g,i)=>world.children[i]!==g))order.forEach(g=>world.appendChild(g));
+  if(!RM)requestAnimationFrame(frame)}
+requestAnimationFrame(frame);
+
+// ---- The opening. The ship flies at the camera, the camera swings alongside, dives into the bridge canopy:
+// red alert, the captain alone at the command chair, then all hands to stations. Once per visit, skippable,
+// never with reduced motion. The ship art is the approved design (art/ship-front.svg, art/ship-side.svg).
+const intro=$("#intro"),icv=$("#introCv"),ix=icv.getContext("2d"),isv=$("#introSvg"),shipF=$("#shipF"),shipS=$("#shipS"),flash=$("#flash");
+let iStars=[],iRun=false;
+function iSize(){const d=Math.min(2,devicePixelRatio||1);icv.width=innerWidth*d;icv.height=innerHeight*d;ix.setTransform(d,0,0,d,0,0);
+  iStars=Array.from({length:320},()=>({x:(Math.random()-.5)*innerWidth*2,y:(Math.random()-.5)*innerHeight*2,z:Math.random()*innerWidth}))}
+let lat=[];
+function sideStars(speed){const w=innerWidth,h=innerHeight;ix.fillStyle="#05020a";ix.fillRect(0,0,w,h);
+  if(!lat.length)lat=Array.from({length:220},()=>({x:Math.random()*w,y:Math.random()*h,d:Math.random()*.9+.1}));
+  for(const s of lat){s.x-=speed*s.d;if(s.x<-40){s.x=w+Math.random()*40;s.y=Math.random()*h}
+    ix.strokeStyle=`rgba(253,245,252,${(.25+.6*s.d).toFixed(2)})`;ix.lineWidth=1.2*s.d+.4;ix.beginPath();ix.moveTo(s.x,s.y);ix.lineTo(s.x+speed*s.d*2.2,s.y);ix.stroke()}}
+function warpStars(speed){const w=innerWidth,h=innerHeight;ix.fillStyle="#05020a";ix.fillRect(0,0,w,h);
+  for(const s of iStars){s.z-=speed;if(s.z<1){s.z=w;s.x=(Math.random()-.5)*w*2;s.y=(Math.random()-.5)*h*2}
+    const k=w/2/s.z,x=w/2+s.x*k,y=h/2+s.y*k,a=Math.min(1,1.2*(1-s.z/w));ix.strokeStyle=`rgba(253,245,252,${a.toFixed(2)})`;
+    ix.lineWidth=1.4;ix.beginPath();ix.moveTo(x,y);ix.lineTo(x+s.x*k*speed*.004,y+s.y*k*speed*.004);ix.stroke()}}
+const ease=k=>k<.5?4*k*k*k:1-Math.pow(-2*k+2,3)/2,lerp=(a,b,k)=>a+(b-a)*k;
+const tkK=$("#tkK");
+function alertOn(on){$(".scene").classList.toggle("alert",on);
+  if(on){tkK.textContent="RED ALERT";tk.textContent="ALL HANDS TO STATIONS";tk2.textContent=""}
+  else{tkK.textContent="ON THE WIRE";D.feed.length?put(D.feed[0]):(tk.textContent="No relays in the last 7 days.")}}
+function playIntro(){if(RM||iRun)return;iRun=true;intro.hidden=false;intro.classList.remove("gone");iSize();
+  actors.forEach(a=>{a.g.style.opacity=0;a.path=[];a.busy=true});doors(false);flash.setAttribute("opacity",0);lat=[];
+  const T1=2600,T2=1900,T3=1500,t0=performance.now();let done=false;
+  const VB={x:-400,y:-300,w:800,h:600},bw=$("#s-bridge-window").getBBox(),WIN={x:bw.x+bw.width*.6,y:bw.y+bw.height*.32,w:bw.width};  // aim at the glass itself: the canopy is a curved band, so its box centre sits on the hull
+  const finish=()=>{if(done)return;done=true;intro.classList.add("gone");setTimeout(()=>{intro.hidden=true;iRun=false},700);
+    // inside: dark, red alert, the captain alone at the command chair
+    actors.forEach(a=>{a.x=a.home.x;a.y=a.home.y;a.path=[]});if(C){C.g.style.opacity=1;C.busy=false;setMood(C,"thinking")}
+    alertOn(true);setTimeout(()=>{const t=scramble(false);setTimeout(()=>{alertOn(false);if(C)setMood(C,"steady")},t+600)},1400)};
+  $("#skip").onclick=finish;
+  (function step(t){if(done)return;const e=t-t0;
+    if(e<T1){const k=e/T1,q=k*k*k,s=lerp(.04,1.6,q)+Math.max(0,k-.86)/.14*6;warpStars(4+20*q);
+      // shot 1: head-on; in the last moments it rushes past the camera in a burst of engine light
+      shipF.setAttribute("transform",`translate(0 ${lerp(30,0,q)}) scale(${s})`);shipF.setAttribute("opacity",k<.9?Math.min(1,k*4):Math.max(0,1-(k-.9)/.1));
+      shipS.setAttribute("opacity",0);flash.setAttribute("opacity",Math.max(0,(k-.88)/.12)*.85)}
+    else if(e<T1+T2){const k=(e-T1)/T2,es=1-Math.pow(1-k,3);
+      // shot 2 (a cut): tracking alongside; the ship slides in and settles while the stars stream past
+      sideStars(lerp(46,14,es));shipF.setAttribute("opacity",0);flash.setAttribute("opacity",Math.max(0,.8-k*7));
+      shipS.setAttribute("opacity",1);shipS.setAttribute("transform",`translate(${lerp(-620,0,es)} ${Math.sin(k*3.1)*6}) scale(1.1)`)}
+    else if(e<T1+T2+T3){const k=(e-T1-T2)/T3,z=ease(k);sideStars(lerp(14,4,z));shipF.setAttribute("opacity",0);shipS.setAttribute("opacity",1);shipS.setAttribute("transform","scale(1.1)");
+      const w=VB.w*Math.pow(WIN.w*1.1*.9/VB.w,z),h=w*.75,cx=lerp(0,WIN.x*1.1,z),cy=lerp(0,WIN.y*1.1,z);
+      isv.setAttribute("viewBox",`${cx-w/2} ${cy-h/2} ${w} ${h}`);flash.setAttribute("opacity",Math.max(0,(k-.8)/.2));
+      flash.setAttribute("x",cx-w/2);flash.setAttribute("y",cy-h/2);flash.setAttribute("width",w);flash.setAttribute("height",h)}
+    else{finish();return}
+    requestAnimationFrame(step)})(t0);
+  isv.setAttribute("viewBox",`${VB.x} ${VB.y} ${VB.w} ${VB.h}`)}
+$("#replay").onclick=playIntro;
+let seen=false;try{seen=sessionStorage.getItem("bridge-intro")==="1";sessionStorage.setItem("bridge-intro","1")}catch(e){}
+if(!RM&&!seen)playIntro();
+if(RM)$("#replay").hidden=true;
+
+// ---- Crew numbers and the feed.
+$("#roster").innerHTML=D.crew.map(m=>{const open=m.status==="open",[cls,lab]=ST[m.status]||["",m.status];
+  return `<div class="mem${open?" open":""}"><span class="k">${E(m.label)}</span><h3>${E(open?"Open post":m.name)}</h3><p>${E(m.job)}</p>
+  <span class="chip ${cls}">${E(lab)}</span>${m.cand?.candidate?` <span class="chip cand">Candidate</span>`:""}</div>`}).join("");
+const color=n=>(D.crew.find(m=>m.name===n)||{}).color||"#d5a56a";
+$("#feed").innerHTML=D.feed.length?D.feed.map(f=>`<li><span class="dot" style="background:${color(f.by)}"></span>
+  <span><span class="who">${E(f.by)}</span> <span class="what">· ${E(f.what)}</span></span><span class="to">${f.n>1?f.n+" × ":""}${E(f.to)}</span></li>`).join(""):`<li class="empty">No relays in the last 7 days.</li>`;
+
+// ---- Viewscreen: stars streaming past.
+const cv=$("#sky"),cx=cv.getContext("2d");let stars=[];
+function size(){const d=Math.min(2,devicePixelRatio||1),W=cv.clientWidth,H=cv.clientHeight;cv.width=W*d;cv.height=H*d;cx.setTransform(d,0,0,d,0,0);
+  stars=Array.from({length:180},()=>({x:(Math.random()-.5)*W,y:(Math.random()-.5)*H,z:Math.random()*W}))}
+function draw(){const W=cv.clientWidth,H=cv.clientHeight;cx.fillStyle="#0a0410";cx.fillRect(0,0,W,H);
+  const g=cx.createRadialGradient(W/2,H/2,0,W/2,H/2,W/1.4);g.addColorStop(0,"rgba(108,29,114,.35)");g.addColorStop(1,"rgba(0,0,0,0)");cx.fillStyle=g;cx.fillRect(0,0,W,H);
+  for(const s of stars){if(!RM){s.z-=1.2;if(s.z<1){s.z=W;s.x=(Math.random()-.5)*W;s.y=(Math.random()-.5)*H}}
+    const k=W/2/s.z,x=W/2+s.x*k,y=H/2+s.y*k,r=Math.max(.6,2.2-s.z/W*1.8);
+    cx.fillStyle=`rgba(253,245,252,${Math.min(1,.25+1.1*(1-s.z/W)).toFixed(2)})`;cx.beginPath();cx.arc(x,y,r,0,6.283);cx.fill()}}
+function loop(){draw();requestAnimationFrame(loop)}
+addEventListener("resize",()=>{size();draw()});size();RM?draw():requestAnimationFrame(loop);
+})();
+</script>
