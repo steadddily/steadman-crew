@@ -89,7 +89,7 @@ h2{margin:0 0 10px;font:400 22px/1.2 var(--serif)}
 .empty{padding:14px;color:var(--mute)}
 footer{color:var(--faint);font-size:12.5px;border-top:1px solid var(--line);padding-top:12px}
 @media (max-width:560px){.feed li{grid-template-columns:14px minmax(0,1fr)}.feed time,.feed .to{grid-column:2}}
-.feed li{grid-template-columns:14px minmax(0,1fr) auto}
+.mem h3{display:flex;align-items:center;gap:10px}.mem h3 .av{flex:none;width:44px;height:44px}.mem h3 .av svg{width:100%;height:100%;display:block}
 </style>
 
 <div id="intro" hidden><canvas id="introCv" aria-hidden="true"></canvas>
@@ -277,7 +277,7 @@ footer{color:var(--faint);font-size:12.5px;border-top:1px solid var(--line);padd
   </div></div>
 
   <section><h2>Crew</h2><div class="roster" id="roster"></div></section>
-  <section><h2>What they send</h2><ul class="feed" id="feed"></ul></section>
+  
 </main>
 
 <script>
@@ -289,7 +289,7 @@ const ST={live:["live","Live"],testing:["test","Testing"],planned:["","Test soon
 const ago=iso=>{if(!iso)return"none in 7 days";const h=(Date.now()-Date.parse(iso))/36e5;return h<1?"under an hour ago":h<48?Math.round(h)+" h ago":Math.round(h/24)+" days ago"};
 const when=iso=>new Date(iso).toLocaleString("en-US",{timeZone:"America/Chicago",weekday:"short",hour:"numeric",minute:"2-digit"});
 const rnd=(lo,hi)=>lo+Math.random()*(hi-lo);
-$("#asof").textContent="Examples, not live";
+$("#asof").textContent="";
 
 // ---- The deck. Berths fill the back row first; a new station takes the next free berth.
 const BERTHS=[[330,478],[575,478],[1025,478],[1270,478],[235,736],[505,736],[1095,736],[1365,736]];
@@ -491,10 +491,10 @@ if(RM)$("#replay").hidden=true;
 
 // ---- Crew numbers and the feed.
 $("#roster").innerHTML=D.crew.map(m=>{const open=m.status==="open",[cls,lab]=ST[m.status]||["",m.status];
-  return `<div class="mem${open?" open":""}"><span class="k">${E(m.label)}</span><h3>${E(open?"Open post":m.name)}</h3><p>${E(m.job)}</p>
+  return `<div class="mem${open?" open":""}"><span class="k">${E(m.label)}</span><h3>${open?"":`<span class="av">${m.moods?.steady||""}</span>`}${E(open?"Open post":m.name)}</h3><p>${E(m.job)}</p>
   <span class="chip ${cls}">${E(lab)}</span>${m.cand?.candidate?` <span class="chip cand">Candidate</span>`:""}</div>`}).join("");
 const color=n=>(D.crew.find(m=>m.name===n)||{}).color||"#d5a56a";
-$("#feed").innerHTML=D.feed.length?D.feed.map(f=>`<li><span class="dot" style="background:${color(f.by)}"></span>
+($("#feed")||{}).innerHTML=D.feed.length?D.feed.map(f=>`<li><time datetime="${f.t}">${E(when(f.t))}</time><span class="dot" style="background:${color(f.by)}"></span>
   <span><span class="who">${E(f.by)}</span> <span class="what">· ${E(f.what)}</span></span><span class="to">${f.n>1?f.n+" × ":""}${E(f.to)}</span></li>`).join(""):`<li class="empty">No relays in the last 7 days.</li>`;
 
 // ---- Viewscreen: stars streaming past.
